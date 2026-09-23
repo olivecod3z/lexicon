@@ -1,0 +1,24 @@
+# Secrets and local data
+.env
+.env.*
+!.env.example
+data/
+*.db
+*.db-*
+*.sqlite*
+# Dependencies and output
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+pytest-cache-files-*/
+tests/.pytest-tmp*/
+frontend/node_modules/
+frontend/dist/
+# Local tools and OS files
+.local-tools/
+*.log
+desktop.ini
+.DS_Store
+New Text Document.txt
