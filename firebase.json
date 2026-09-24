@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "out",
+    "public": "hosting-dist",
     "ignore": [
       "firebase.json",
       "**/.*",
@@ -36,6 +36,16 @@
         ]
       }
     ],
-    "site": "lexicon-study-20260923"
+    "site": "lexicon-study-20260923",
+    "rewrites": [
+      {
+        "source": "/dashboard",
+        "destination": "/dashboard/index.html"
+      },
+      {
+        "source": "/dashboard/**",
+        "destination": "/dashboard/index.html"
+      }
+    ]
   }
 }

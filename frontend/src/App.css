@@ -344,3 +344,9 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
   .result-row>div { flex-basis: 60%; }
   .card-controls .muted { text-align: center; font-size: 10px; }
 }
+
+.hosting-preview { padding: 20px 24px; margin-bottom: 24px; background: var(--surface-blue); color: var(--text-primary); border-radius: 14px; }
+.hosting-preview p { margin: 8px 0; line-height: 1.6; }
+.hosting-preview a { color: var(--forest); text-decoration: underline; font-weight: 600; }
+
+.sidebar-bottom > a.text-button { color: var(--on-forest); display: block; padding: 12px; margin-bottom: 12px; text-decoration: underline; }

@@ -22,3 +22,6 @@ frontend/dist/
 desktop.ini
 .DS_Store
 New Text Document.txt
+
+hosting-dist/
+.firebase/
