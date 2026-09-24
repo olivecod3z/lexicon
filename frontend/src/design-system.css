@@ -1,0 +1,22 @@
+.workspace { font-size: var(--type-body); }
+.workspace .page-heading h1 { font-size: var(--type-h1); line-height: 1.2; letter-spacing: -.025em; font-weight: 700; }
+.workspace h2 { font-size: var(--type-h3); }
+.workspace .upload-card h3 { font-size: var(--type-h3); }
+.workspace .page-heading p,.workspace .upload-card p,.hosting-preview p,.study-paper p,.study-paper li { font-size: var(--type-body); line-height: 1.7; }
+.workspace .button,.workspace .tool-overview b,.sidebar nav button,.tool-link,.workspace .segmented button,.breadcrumb { font-size: var(--type-small); }
+.workspace .tool-overview span,.workspace .upload-card small,.session-footnote,.material-row p,.nav-caption,.sidebar-bottom > p,.workspace .muted { font-size: var(--type-caption); line-height: 1.6; }
+.workspace .text-button,.workspace .eyebrow { color: var(--forest); }
+.workspace .sidebar a,.workspace .sidebar .text-button { color: var(--on-forest); }
+.sidebar { overflow-y: auto; }
+.workspace .quiz article button.selected::after,.progress-note span { color: var(--forest); }
+.workspace .quiz article button.selected { border-color: var(--forest); box-shadow: 0 0 0 1px var(--forest); }
+.workspace .quiz article button.selected b,.workspace .score,.workspace .score p,.workspace .score .eyebrow { color: var(--on-lime); }
+.workspace .score { box-shadow: none; }
+.workspace .quiz input,.workspace .quiz textarea { border-color: var(--border-strong); }
+.workspace .segmented { flex-wrap: wrap; }
+@media(max-width:650px) {
+ .workspace .tool-overview { grid-template-columns: 1fr; }
+ .workspace .tool-overview button { flex-direction: row; padding: 16px 0; }
+ .workspace .topbar { flex-wrap: wrap; height: auto; min-height: 72px; gap: 12px; }
+ .workspace .card-controls { flex-wrap: wrap; }
+}

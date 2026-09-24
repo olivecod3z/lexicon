@@ -1,0 +1,49 @@
+/* Application roles mapped onto the shared Lexicon design tokens. */
+.landscape-copy h1 { font-size: var(--type-display); line-height: 1.15; letter-spacing: -.035em; font-weight: 700; }
+.section h2,.toolkit-heading h2,.focus-heading h2,.pricing-heading h2,.faq-section h2,.final-section h2 { font-size: var(--type-h1); font-weight: 700; line-height: 1.2; letter-spacing: -.025em; }
+.steps h3,.focus-feature-copy h3,.pricing-card-top h3 { font-size: var(--type-h3); font-weight: 650; line-height: 1.4; }
+.landscape-copy > p,.section-heading > p,.toolkit-heading > p,.steps p,.focus-feature-copy > p,.pricing-heading p,.faq-section p,.final-section > p { font-size: var(--type-body); line-height: 1.7; color: var(--text-secondary); }
+.landscape-copy > p { color: var(--text-primary); }
+.nav,.nav a,.button,.footer-links,.footer-links button,.pricing-card-details li,.pricing-card-top > p,.faq-list summary { font-size: var(--type-small); }
+.eyebrow,.note-meta,.sample-badge,.toolkit-sample-note,.plan-note,.plan-action > span,.pricing-footnote,.pricing-availability,.pricing-card-details h4,.copyright,.footer p,.feature-preview-label,.focus-course small,.course-preview-footer,.revision-status,.revision-next small,.revision-next p { font-size: var(--type-caption); line-height: 1.6; color: var(--text-muted); }
+.pricing-card-top > p,.plan-price small,.pricing-card-details li,.focus-course strong,.revision-topic,.revision-next strong,.feature-preview-label > span { color: var(--text-secondary); }
+.pricing-card-details h4 { font-weight: 700; }
+.pricing-card-top > p { min-height: 0; }
+.footer-links { flex-wrap: wrap; }
+.footer-links a,.footer-links button,.nav a { display: inline-flex; align-items: center; min-height: 44px; }
+.toolkit-window .demo-content { height: auto; min-height: 540px; overflow: visible; }
+.toolkit-window .demo-content p,.toolkit-window .demo-content h4,.answers button,.flashcard-tip { font-size: var(--type-small); color: var(--text-secondary); }
+.toolkit-window .demo-content h3 { font-size: var(--type-h3); }
+.toolkit-section .demo-tabs button small { font-size: var(--type-caption); color: var(--text-muted); }
+.toolkit-section .demo-tabs button > span { font-size: var(--type-small); }
+.toolkit-section .demo-tabs button { min-width: 0; }
+.toolkit-playback button,.motion-control,.dash-demo-toggle,.card-controls button,.menu-toggle { min-width: 44px; min-height: 44px; }
+.toolkit-playback { bottom: 20px; }
+.toolkit-callout { display: none !important; }
+.answers button { border-color: var(--border-strong); }
+.answers button.correct { color: var(--success); border-color: var(--success); }
+.answers button.incorrect { color: var(--danger); border-color: var(--danger); }
+.answers button:disabled { opacity: 1; }
+.landscape-header .nav { color: var(--text-primary); }
+.notice-modal { border: 1px solid var(--border-strong); background: var(--surface); color: var(--text-primary); width: min(450px, calc(100% - 32px)); max-height: calc(100dvh - 48px); overflow: auto; }
+.notice-modal::backdrop { background: #17211b99; }
+.notice-modal p { color: var(--text-secondary); }
+@media(max-width:600px) {
+  .toolkit-section .demo-tabs { flex-wrap: wrap; }
+  .toolkit-section .demo-tabs button { flex: 1 1 100%; justify-content: flex-start; }
+  .focus-feature-art { padding: 20px 14px; }
+  .revision-topic { flex-wrap: wrap; }
+  .landscape-actions { flex-wrap: wrap; }
+  .landscape-copy h1 { overflow-wrap: anywhere; }
+}
+/* Small text in illustrative previews still needs readable contrast. */
+.refined-dashboard :is(p,small,span,strong),.step-motion :is(p,small,span,strong) { color: var(--text-secondary); }
+.refined-dashboard :is(h2,h3,h4),.step-motion strong { color: var(--text-primary); }
+.refined-dashboard .dash-demo-toggle,.motion-control { color: var(--forest); border-color: var(--border-strong); }
+.landscape-caption { background: var(--forest); color: var(--on-forest); padding: 16px 24px; border-radius: var(--radius-card); }
+.toolkit-window .demo-content h4 > span { color: var(--text-muted); }
+
+.refined-dashboard :is(p,small,span,strong),.step-motion :is(p,small,span,strong) { color: var(--text-secondary) !important; }
+.landscape-header .button,.landscape-actions .button,.plan-action .button,.final-section .button { border-radius: var(--radius-control); font-size: var(--type-small); }
+.refined-dashboard .dash-primary { color: var(--on-lime) !important; background: var(--brand-primary); }
+.answers button > span { color: inherit; }

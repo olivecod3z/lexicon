@@ -1,0 +1,42 @@
+/* Lexicon: shared semantic tokens and interaction rules for both applications. */
+:root {
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-heading: 'Manrope', system-ui, sans-serif;
+  --type-caption: .75rem; --type-small: .875rem; --type-body: 1rem;
+  --type-lead: 1.125rem; --type-h3: 1.25rem;
+  --type-h2: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  --type-h1: clamp(1.875rem, 1.4rem + 2vw, 2.5rem);
+  --type-display: clamp(2rem, 1.2rem + 3.2vw, 3.75rem);
+  --background: #f9faf7; --surface: #fff; --surface-muted: #f1f4ed;
+  --surface-blue: #d9e6e8; --forest: #293e2a; --on-forest: #e9f1df;
+  --brand-primary: #a5eb69; --brand-primary-hover: #93da58;
+  --brand-primary-subtle: #edf5e4; --on-lime: #162414;
+  --text-primary: #17211b; --text-secondary: #4e5e4d; --text-muted: #566451;
+  --border: #dbe2d6; --border-strong: #71806a;
+  --success: #2b4820; --danger: #9d352e; --info: #365d64;
+  --paper: var(--background); --ink: var(--text-primary); --muted: var(--text-muted);
+  --line: var(--border); --purple: var(--forest); --lavender: var(--surface-muted);
+  --radius-control: 10px; --radius-card: 16px;
+  --motion-fast: 160ms; --motion-normal: 240ms; --ease-ui: cubic-bezier(.2,.7,.2,1);
+}
+html { font-size: 100%; scroll-padding-block: 6rem; }
+body { font-family: var(--font-body); font-size: var(--type-body); line-height: 1.6; color: var(--text-primary); background: var(--background); }
+button, input, textarea, select { font: inherit; }
+h1,h2,h3,h4 { font-family: var(--font-heading); text-wrap: balance; }
+p { text-wrap: pretty; }
+:where(button, a, input, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--forest) !important; outline-offset: 3px;
+  box-shadow: 0 0 0 3px white !important;
+}
+:where(button, .button, summary) { min-height: 44px; }
+:where(button, a) { transition-duration: var(--motion-fast); transition-timing-function: var(--ease-ui); }
+.button { border-radius: var(--radius-control); font-size: var(--type-small); font-weight: 600; }
+.button.primary,.button.lime { background: var(--brand-primary); color: var(--on-lime); }
+.button.dark,.button.charcoal { background: var(--forest); color: var(--on-forest); }
+.button:hover { transform: none; }
+.skip-link { position: fixed; left: 16px; top: -100px; z-index: 1000; padding: 12px 20px; color: var(--on-forest); background: var(--forest); border-radius: var(--radius-control); }
+.skip-link:focus { top: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

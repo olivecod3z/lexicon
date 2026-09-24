@@ -455,3 +455,30 @@ comes from the student's selected lecture, generated resources and resume state.
 The library survives page refresh. Generated resources and practice answers are
 currently scoped to the open page. Course organization, accounts, persistent
 study-resource history, RAG and subscriptions remain later milestones.
+
+## Shared implementation — September 2026
+
+`shared/design-system.css` owns the semantic palette, fluid rem-based type scale,
+control radii, focus treatment and reduced-motion rules used by both applications.
+App-specific role mappings are in `landing/app/design-system.css` and
+`frontend/src/design-system.css`. Import these after legacy component styles.
+Use Manrope for headings and DM Sans for prose and controls, with bundled fonts.
+Use MingCute Core Regular for all interface icons. Decorative SVGs should be
+hidden from assistive technology; icon-only buttons require an accessible name.
+
+Normal text pairs must meet 4.5:1 contrast; large text and essential graphical
+controls require 3:1. Never place white text on lime. Use `--on-lime` instead.
+Default body copy is 16px, controls 14px, captions 12px, and headings use the shared
+fluid scale. Illustrative miniatures are not the application's reading text.
+Use a 44px control target where layout permits. Preserve keyboard focus, native
+semantics, keyboard-operated tabs and text equivalents for feedback.
+
+Animations start paused, have explicit play/pause controls, and respect reduced
+motion. Interactive study tabs pause on user interaction. Dialogs use the native
+`dialog` element for Escape handling, focus containment and return focus.
+
+Run `node scripts/check-design-contrast.mjs`, frontend lint and the combined build
+before publishing. Recheck keyboard navigation, narrow-screen reflow and both
+sample quiz states after visual changes. Passing automated checks is not a claim
+of complete WCAG 2.2 AA conformance; imagery, gradients and assistive-technology
+behavior also require manual evaluation.

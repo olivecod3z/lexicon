@@ -5,7 +5,7 @@ import { ArrowRight, ArrowUpRight, BookOpen, Chart, Check, ChevronRight, FileTex
 
 export default function HeroDashboard() {
   const [phase, setPhase] = useState(0);
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(true);
   const [visible, setVisible] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ left: 0, top: 0 });
   const [reduced, setReduced] = useState(true);
@@ -45,7 +45,7 @@ export default function HeroDashboard() {
     return () => observer.disconnect();
   }, [phase, reduced]);
   const showingQuiz = phase >= 2 && phase <= 4 && !reduced;
-  return <div ref={preview} className={`dashboard-peek refined-dashboard dash-demo phase-${reduced ? 0 : phase} ${paused ? 'demo-paused' : ''}`} aria-label="Autoplay sample dashboard: a student opens a practice question, selects the correct answer, and sees their progress update">
+  return <div role="group" ref={preview} className={`dashboard-peek refined-dashboard dash-demo phase-${reduced ? 0 : phase} ${paused ? 'demo-paused' : ''}`} aria-label="Sample dashboard: a student opens a practice question, selects the correct answer, and sees their progress update">
     <aside className="dash-sidebar">
       <span className="dash-brand"><span><Layers size={17} /></span>lexicon.</span>
       <div className="dash-workspace"><span className="dash-avatar">Jo</span><div>Your workspace<small>Personal account</small></div><ChevronRight size={12} /></div>
@@ -61,7 +61,7 @@ export default function HeroDashboard() {
       <span className="dash-settings"><Settings size={14} /> Settings</span>
     </aside>
     <div className="dash-body">
-      <div className="dash-toolbar"><span>Workspace <ChevronRight size={11} /><strong>Overview</strong></span><span className="dash-sample">{reduced ? 'Sample workspace' : 'Autoplay demo'}</span>{!reduced && <button className="dash-demo-toggle" onClick={() => setPaused(!paused)} aria-label={paused ? 'Play dashboard demo' : 'Pause dashboard demo'} aria-pressed={paused}>{paused ? <Play size={12} /> : <Pause size={12} />}</button>}<span className="dash-search" aria-label="Search icon in illustrative preview"><Search size={15} /></span></div>
+      <div className="dash-toolbar"><span>Workspace <ChevronRight size={11} /><strong>Overview</strong></span><span className="dash-sample">{reduced || paused ? 'Sample workspace' : 'Playing demo'}</span>{!reduced && <button className="dash-demo-toggle" onClick={() => setPaused(!paused)} aria-label={paused ? 'Play dashboard demo' : 'Pause dashboard demo'} aria-pressed={paused}>{paused ? <Play size={12} /> : <Pause size={12} />}</button>}<span className="dash-search" role="img" aria-label="Search icon in illustrative preview"><Search size={15} /></span></div>
       <div className="dash-content">
         <div className="dash-greeting"><div><span className="dash-day"><Sun size={12} /> A good day to learn</span><h2>A little progress, every day.</h2><p>Pick up where you left off. Your next lightbulb moment is waiting.</p></div><span className="dash-primary"><Zap size={13} />Quick practice</span></div>
         <div className="dash-metrics">
