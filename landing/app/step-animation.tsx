@@ -5,7 +5,7 @@ import { ArrowUp, BookOpen, Check, FileText, Layers, MousePointer2, Pause, Play,
 
 type Step = 'upload' | 'generate' | 'improve';
 const descriptions = {
-  upload: 'A lecture PDF drops into an upload tray and receives a confirmation check.',
+  upload: 'A lecture pdf drops into an upload tray and receives a confirmation check.',
   generate: 'A lecture is transformed into notes, flashcards, and a quiz.',
   improve: 'A practice answer is checked, then learning progress grows.',
 };

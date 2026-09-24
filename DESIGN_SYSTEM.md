@@ -482,3 +482,5 @@ before publishing. Recheck keyboard navigation, narrow-screen reflow and both
 sample quiz states after visual changes. Passing automated checks is not a claim
 of complete WCAG 2.2 AA conformance; imagery, gradients and assistive-technology
 behavior also require manual evaluation.
+
+Interface copy uses sentence case for headings, navigation, labels and buttons. Do not force uppercase with CSS. Display file formats in lowercase; preserve original uploaded document content and filenames.

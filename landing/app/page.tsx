@@ -76,7 +76,7 @@ export default function Home() {
           <button ref={menuButton} aria-controls="landing-navigation" className="menu-toggle" onClick={() => setMenu(!menu)} aria-label={menu ? 'Close menu' : 'Open menu'} aria-expanded={menu}>{menu ? <X /> : <Menu />}</button>
         </header>
         <div className="landscape-copy">
-          <h1 id="hero-title">Turn your lecture PDFs into<br />{' '}notes, flashcards, and quizzes</h1>
+          <h1 id="hero-title">Turn your lecture pdfs into<br />{' '}notes, flashcards, and quizzes</h1>
           <p>Understand the big ideas, test what you know,<br className="desktop-break" /> and focus on what needs another look.</p>
           <div className="landscape-actions"><a className="button lime" href="/dashboard/">Open student dashboard <ArrowRight size={15} /></a><a className="button charcoal" href="#how-it-works">See how it works</a></div>
         </div>
@@ -89,7 +89,7 @@ export default function Home() {
       <section id="how-it-works" className="section wrap" tabIndex={-1}>
         <div className="section-heading"><div><div className="eyebrow">How it works</div><h2>From “all this?”<br />to <span className="heading-continuation">“I’ve got this.”</span></h2></div><p>You bring the lecture. Lexicon helps you turn it into a study session with a clear next step.</p></div>
         <div className="steps">
-          <article><div className="step-number">01</div><h3>Start with what you have.</h3><p>Your lecture slides, course notes, that PDF you’ve been putting off. Give it a home in your course.</p><StepAnimation type="upload" /></article>
+          <article><div className="step-number">01</div><h3>Start with what you have.</h3><p>Your lecture slides, course notes, that pdf you’ve been putting off. Give it a home in your course.</p><StepAnimation type="upload" /></article>
           <article><div className="step-number">02</div><h3>Meet your study pack.</h3><p>Get structured notes, bite-sized flashcards, and practice questions built around your material.</p><StepAnimation type="generate" /></article>
           <article><div className="step-number">03</div><h3>Find your next “aha.”</h3><p>Test what you know, spot what needs another look, and come back with a little more confidence.</p><StepAnimation type="improve" /></article>
         </div>
@@ -121,16 +121,16 @@ export default function Home() {
       <Pricing />
 
       <section id="faq" className="faq-section wrap"><div><div className="eyebrow">A little more clarity</div><h2>Good <span className="heading-continuation">questions.</span></h2><p>Every great study session starts with one.</p></div><div className="faq-list">{[
-        ['What is Lexicon?', 'Lexicon is a study platform being built to turn lecture PDFs into organized notes, flashcards, and quizzes, so you can study and revise in one place.'],
-        ['Can I upload my own lectures yet?', 'This page includes a sample study pack you can explore now. Account creation, PDF uploads, and AI generation are not connected in this preview.'],
-        ['What file types will it support?', 'The first release is focused on PDF lecture material. Upload size and document limits will be confirmed before launch.'],
+        ['What is Lexicon?', 'Lexicon is a study platform being built to turn lecture pdfs into organized notes, flashcards, and quizzes, so you can study and revise in one place.'],
+        ['Can I upload my own lectures yet?', 'Yes. Open the student dashboard to add pdfs or txt files and read them. They are saved only in that browser, not in a cloud account. Automated generation and account sync are not connected yet.'],
+        ['What file types will it support?', 'The browser library accepts pdf and utf-8 txt files up to 25 megabytes each, with a 100-megabyte local-library limit. Scanned pdfs can be viewed, but text extraction requires selectable text.'],
         ['How much will it cost?', 'The launch plans are Free at ₦0/month for 3 learning packs, Student at ₦3,000/month for 30 packs, and Pro at ₦7,000/month for 75 packs. Features marked as planned will be added when released. Subscriptions are not open yet; you can explore the sample without payment.'],
-        ['Should I still check my lecture notes?', 'Yes. AI-generated study material can contain mistakes. Use your original lecture notes and course guidance to check important details.'],
+        ['Should I still check my lecture notes?', 'Yes. Automated-generated study material can contain mistakes. Use your original lecture notes and course guidance to check important details.'],
       ].map(([question, response]) => <details key={question}><summary>{question}<ChevronDown size={19} /></summary><p>{response}</p></details>)}</div></section>
 
       <section className="final-section wrap"><div className="eyebrow">Your next “aha” is waiting.</div><h2>Make room for<br /><span className="heading-continuation">a little understanding.</span></h2><p>Start with one idea. See where it takes you.</p><a href="#demo" className="button lime">Try the sample study pack <ArrowUpRight size={18} /></a></section>
       <footer className="wrap footer"><div><a className="wordmark" href="#">lexicon<span className="brand-dot">.</span></a><p>A little clearer, every day.</p></div><div className="footer-links"><a href="#how-it-works">How it works</a><a href="#features">The toolkit</a><a href="#pricing">Pricing</a><a href="#faq">Questions</a><button onClick={() => noticeDialog.current?.showModal()}>Project status <ArrowUpRight size={13} /></button></div><span className="copyright">© {new Date().getFullYear()} Lexicon</span></footer>
-      <dialog ref={noticeDialog} aria-labelledby="notice-title" className="notice-modal"><h2 id="notice-title">A study space in the making.</h2><p>You can explore the sample notes, flashcards, quiz and student dashboard. Uploads and AI generation are not connected online yet.</p><form method="dialog"><button className="button lime">Got it <Check size={16} /></button></form></dialog>
+      <dialog ref={noticeDialog} aria-labelledby="notice-title" className="notice-modal"><h2 id="notice-title">A study space in the making.</h2><p>You can explore the sample notes, flashcards, quiz and student dashboard. pdf uploads and reading work in your browser. Cloud accounts and automated generation are not connected yet.</p><form method="dialog"><button className="button lime">Got it <Check size={16} /></button></form></dialog>
     </main>
   );
 }

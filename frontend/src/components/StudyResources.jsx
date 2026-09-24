@@ -15,12 +15,12 @@ export function FlashcardReview({ cards }) {
   return <section className="study-paper"><div className="section-heading"><h2>{cards.title}</h2><span className="muted">{index + 1} / {cards.flashcards.length}</span></div><p className="eyebrow">{card.topic}</p><button className="flashcard" aria-label={revealed ? 'Hide answer' : 'Reveal answer'} aria-pressed={revealed} onClick={() => setRevealed(!revealed)}><Icon name="layers" /><h2>{revealed ? card.answer : card.question}</h2><span>{revealed ? 'Show question' : 'Click or press Enter to reveal'}</span></button>{revealed && <div className="review-actions"><span>How did you do?</span><button className="button secondary" aria-pressed={ratings[index] === 'again'} onClick={() => setRatings({ ...ratings, [index]: 'again' })}>Review again</button><button className="button primary" aria-pressed={ratings[index] === 'got-it'} onClick={() => setRatings({ ...ratings, [index]: 'got-it' })}>Got it</button></div>}<div className="card-controls"><button className="button secondary" disabled={index === 0} onClick={() => move(index - 1)}>Previous</button><span className="muted" role="status">{mastered} marked “Got it”</span><button className="button secondary" disabled={index === cards.flashcards.length - 1} onClick={() => move(index + 1)}>Next card <Icon name="arrow" /></button></div></section>
 }
 
-export function GenerateResource({ type, busy, onGenerate }) {
+export function GenerateResource({ type, busy, onGenerate, unavailable = false }) {
   const config = {
     notes: ['file', 'Study notes', 'An overview, learning objectives and key ideas from your lecture.', 'Generate study notes'],
     cards: ['layers', 'Flashcards', 'Review your lecture through concept questions and keyword recall.', 'Create flashcards'],
-    practice: ['practice', 'Practice & quiz', '5 MCQs, 3 fill-in-the-gap questions and 2 theory prompts.', 'Create practice'],
+    practice: ['practice', 'Practice & quiz', '5 multiple-choice questions, 3 fill-in-the-gap questions and 2 theory prompts.', 'Create practice'],
   }
   const [icon, title, description, action] = config[type]
-  return <section className="resource-empty"><span className="large-icon"><Icon name={icon} /></span><h2>{title}</h2><p>{description}</p><button className="button primary" disabled={busy} onClick={onGenerate}>{busy ? 'Generating…' : action}<Icon name="arrow" /></button></section>
+  return <section className="resource-empty"><span className="large-icon"><Icon name={icon} /></span><h2>{title}</h2><p>{unavailable ? "Automated generation is not connected yet. Open Original lecture to read your uploaded material." : description}</p><button className="button primary" disabled={busy || unavailable} onClick={onGenerate}>{busy ? 'Generating…' : action}<Icon name="arrow" /></button></section>
 }

@@ -24,8 +24,10 @@ The landing page uses images and gradients. axe cannot resolve those backgrounds
 reliably and returns incomplete contrast checks; a zero-violation report is not
 proof that every visual state passes. Test screen-reader use (VoiceOver/NVDA),
 200% text resizing, 400% zoom, custom text spacing, and generated study content
-before claiming full conformance. The hosted dashboard currently has no live
-uploads or AI service, so those complete flows are not covered by the hosted scan.
+before claiming full conformance. The hosted dashboard supports device-local document uploads and reading. The
+original-document viewer depends on browser PDF accessibility and the uploaded
+source; generated study tools still require a connected service. The earlier
+hosted scan predates the upload flow.
 
 ## Maintenance
 

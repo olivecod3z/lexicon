@@ -11,7 +11,7 @@ function build(folder, script, env = {}) {
   if (result.status !== 0) process.exit(result.status || 1);
 }
 build('landing', 'build:hosting');
-// The local API has no public authentication yet. Publish navigation only.
+// The hosted dashboard stores documents on-device until an authenticated API is available.
 build('frontend', 'build', { VITE_HOSTING_PREVIEW: 'true' });
 rmSync(`${root}/hosting-dist`, { recursive: true, force: true });
 mkdirSync(`${root}/hosting-dist`, { recursive: true });

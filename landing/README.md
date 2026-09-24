@@ -14,8 +14,8 @@ run `node scripts/build-hosting.mjs` to build both the landing page and dashboar
 Then run `firebase deploy --only hosting --project lexicon-study-20260923` from the root.
 
 The landing page's Get started and Open student dashboard links open `/dashboard/`.
-The public dashboard is explicitly a navigation preview: uploads and AI generation
-are disabled until an authenticated online API is available. Local dashboard
+The public dashboard supports PDF/TXT uploads, reading, downloads and deletion in
+a browser-only library. Cloud accounts and AI generation are not connected. Local dashboard
 builds keep the existing API behavior.
 
 ## Repository structure

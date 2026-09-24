@@ -96,4 +96,4 @@ Install dependencies with `npm ci --prefix landing` and `npm ci --prefix fronten
 Run `node scripts/build-hosting.mjs` from the root, then
 `firebase deploy --only hosting --project lexicon-study-20260923`.
 The landing page is served at `/` and links to the student dashboard at `/dashboard/`.
-The hosted dashboard is a navigation preview with uploads disabled; the local Python API is not deployed.
+The hosted dashboard saves PDFs/TXT files on-device with IndexedDB. Documents can be read, downloaded and removed. AI generation and account sync are not connected; the local Python API is not deployed.

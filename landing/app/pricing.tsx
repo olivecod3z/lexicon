@@ -3,12 +3,12 @@ import { Check } from './icons';
 const plans = [
   {
     name: 'Free', price: '0', description: 'Start with a lecture. Find your way to study.',
-    features: ['3 learning packs per month', 'Basic notes, flashcards, and MCQs', 'One balanced practice set per pack: 5 MCQs, 3 fill-in-the-gap questions, and 2 theory prompts', 'Unlimited retries on generated practice', 'Limited saved-material and quiz history'],
+    features: ['3 learning packs per month', 'Basic notes, flashcards, and multiple-choice questions', 'One balanced practice set per pack: 5 multiple-choice questions, 3 fill-in-the-gap questions, and 2 theory prompts', 'Unlimited retries on generated practice', 'Limited saved-material and quiz history'],
     note: 'Ask My Material is not included at launch.', planned: [],
   },
   {
     name: 'Student', price: '3,000', description: 'Make room for a steady study routine.',
-    features: ['30 learning packs per month', 'Saved materials and learning history', 'Custom practice mixes of up to 10 prompts', 'Balanced, Theory-heavy, and MCQ revision presets'],
+    features: ['30 learning packs per month', 'Saved materials and learning history', 'Custom practice mixes of up to 10 prompts', 'Balanced, theory-heavy, and multiple-choice revision presets'],
     note: '', planned: ['Flashcard review controls', 'Basic progress and weak-topic feedback', 'Up to 50 Ask My Material questions per month', 'Exam Mode'],
   },
   {

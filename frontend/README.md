@@ -59,3 +59,19 @@ Live AI generation is not exercised by the fixture checks.
 Change `--surface-blue` in `src/App.css`, then inspect the resume strip. Next trace
 how `resources[materialId]` keeps one lecture's answers separate from another.
 Colors describe presentation; React state describes the current study session.
+
+## Hosted browser library
+
+The hosted build uses a device-local library (`src/browser-library.js`) instead of the Python API.
+PDF.js extracts selectable PDF text in a worker; the original file and text are stored in IndexedDB.
+Drag/drop or select multiple PDF/TXT files, each up to 25 MB. The local cap is 100 MB
+including extracted text; PDFs are limited to 500 pages. Scanned PDFs remain viewable
+without OCR. Password-protected or invalid PDFs show an error.
+
+Refreshes preserve the library, but clearing browser data removes it. There is no
+account sync, cloud backup, or live AI generation. Keep original copies outside the app.
+The Original lecture tab provides a PDF viewer, readable extracted text and a download.
+My materials provides removal. Files are never sent to an API in this mode.
+
+Run `npm run test:library` to check storage, metadata boundaries, validation, and deletion.
+Local development without the hosted flag continues to use the Python API.

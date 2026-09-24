@@ -20,3 +20,13 @@
  .workspace .topbar { flex-wrap: wrap; height: auto; min-height: 72px; gap: 12px; }
  .workspace .card-controls { flex-wrap: wrap; }
 }
+
+.document-reader .section-heading { flex-wrap: wrap; gap: 16px; }
+.document-reader .section-heading p { font-size: var(--type-small); }
+.pdf-viewer { display: block; width: 100%; height: 65vh; min-height: 360px; border: 1px solid var(--border-strong); border-radius: var(--radius-control); }
+.document-text { margin-top: 24px; }
+.document-text summary { cursor: pointer; font-weight: 600; padding: 12px 0; }
+.document-text pre { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.8; }
+.workspace .tool-overview { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.material-row { flex-wrap: wrap; }
+@media(max-width:650px) { .workspace .tool-overview { grid-template-columns: 1fr; } }
