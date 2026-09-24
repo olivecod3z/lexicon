@@ -1,0 +1,5 @@
+Built-in image generation edit.
+Asset: public/images/study-landscape-pixel.png
+Inputs: original study-landscape.png (edit target), gren.jpg (style reference).
+
+Edit the first image (landscape) for a website hero. Second image is solely a style reference for the grass: electric chartreuse lime and deep forest green, square-pixel halftone dithering and abstract organic patches. Preserve the first image's exact composition, hill silhouettes, horizon heights, and entire soft photographic blue sky and distant blue mountains. Change ONLY the grassy land into a bold stylized two-tone lime-green and dark-green dithered landscape inspired by second image. Make the foreground grass dramatically graphic, crisp small square halftone pixels, organic swathes of lime and dark green that follow the rolling hill contours and light/shadow, with no photographic grass blades. Maintain depth and recognizable rolling hills. Larger visible pixels in foreground, finer in distance. This should feel like a premium digital meadow, not a flat rectangle of texture. Sky stays photographic and untouched. No text, logos, watermarks, UI or borders. Return same 1536x1024 framing.
