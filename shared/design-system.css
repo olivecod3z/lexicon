@@ -16,7 +16,7 @@
   --success: #2b4820; --danger: #9d352e; --info: #365d64;
   --paper: var(--background); --ink: var(--text-primary); --muted: var(--text-muted);
   --line: var(--border); --purple: var(--forest); --lavender: var(--surface-muted);
-  --radius-control: 10px; --radius-card: 16px;
+  --radius-button: 7px; --radius-control: 10px; --radius-card: 16px;
   --motion-fast: 160ms; --motion-normal: 240ms; --ease-ui: cubic-bezier(.2,.7,.2,1);
 }
 html { font-size: 100%; scroll-padding-block: 6rem; }
@@ -44,3 +44,6 @@ p { text-wrap: pretty; }
 /* Keep typography consistent across marketing and study surfaces. */
 body, body :where(button,input,textarea,select,pre,code) { font-family: var(--font-body); }
 h1,h2,h3,h4,h5,h6,h1 *,h2 *,h3 *,h4 *,h5 *,h6 * { font-weight: 500 !important; }
+
+/* Match every action control to the pricing-card button shape. */
+button, .button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], .story-play-icon { border-radius: var(--radius-button) !important; }
