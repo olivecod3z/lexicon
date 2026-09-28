@@ -38,7 +38,7 @@ button:disabled,.disabled { cursor: not-allowed; opacity: .55; }
 button, a { transition: background var(--transition), color var(--transition), border-color var(--transition); }
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,.file-picker:focus-within { outline: 3px solid var(--info); outline-offset: 4px; }
 h1,h2,h3,p { margin-top: 0; }
-h1,h2,h3 { font-family: Manrope, 'Manrope', sans-serif; }
+h1,h2,h3 { font-family: Manrope, 'DM Sans', sans-serif; }
 h1 { font-size: clamp(26px, 2.65vw, 36px); font-weight: 600; line-height: 1.22; letter-spacing: -1.5px; }
 h2 { font-size: 19px; font-weight: 600; letter-spacing: -.55px; }
 h3 { font-size: 15px; font-weight: 600; }
@@ -344,9 +344,3 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
   .result-row>div { flex-basis: 60%; }
   .card-controls .muted { text-align: center; font-size: 10px; }
 }
-
-.hosting-preview { padding: 20px 24px; margin-bottom: 24px; background: var(--surface-blue); color: var(--text-primary); border-radius: 14px; }
-.hosting-preview p { margin: 8px 0; line-height: 1.6; }
-.hosting-preview a { color: var(--forest); text-decoration: underline; font-weight: 600; }
-
-.sidebar-bottom > a.text-button { color: var(--on-forest); display: block; padding: 12px; margin-bottom: 12px; text-decoration: underline; }
