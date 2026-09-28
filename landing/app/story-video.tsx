@@ -11,10 +11,10 @@ export default function StoryVideo() {
   async function start() {
     const player = video.current;
     if (!player) return;
-    setStarted(true);
+
     setError(false);
     player.controls = true;
-    player.src = '/videos/lexicon-story.mp4';
+
     try { await player.play(); player.focus(); }
     catch { setError(true); }
   }
@@ -28,8 +28,8 @@ export default function StoryVideo() {
     </div>
     <figure className="story-figure">
       <div className="story-player">
-        <video ref={video} controls={started} playsInline preload="none" poster="/videos/lexicon-story-poster.jpg" tabIndex={started ? 0 : -1} aria-label="Lexicon promotional video, 57 seconds" aria-describedby="story-caption" onError={() => setError(true)} />
-        {!started && <button className="story-play" onClick={start} aria-label="Watch Lexicon in action, 57 seconds"><span className="story-play-icon"><Play size={26} /></span><span>Watch Lexicon in action<small>57 sec · Sound on</small></span></button>}
+        <video ref={video} src="/videos/lexicon-story.mp4" autoPlay muted loop controls playsInline preload="metadata" onPlaying={() => setStarted(true)} poster="/videos/lexicon-story-poster.jpg" tabIndex={0} aria-label="Lexicon promotional video, 57 seconds" aria-describedby="story-caption" onError={() => setError(true)} />
+        {!started && <button className="story-play" onClick={start} aria-label="Watch Lexicon in action, 57 seconds"><span className="story-play-icon"><Play size={26} /></span><span>Watch Lexicon in action<small>57 sec · Starts muted</small></span></button>}
       </div>
       <figcaption id="story-caption">A little less overwhelm. A little more clarity.</figcaption>
       {error && <p role="status">Having trouble playing? <a href="/videos/lexicon-story.mp4">Open the video directly</a>.</p>}

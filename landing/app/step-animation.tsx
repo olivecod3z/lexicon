@@ -13,7 +13,7 @@ const descriptions = {
 export default function StepAnimation({ type }: { type: Step }) {
   const container = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const [paused, setPaused] = useState(true);
+  const [paused, setPaused] = useState(false);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.15 });
     if (container.current) observer.observe(container.current);

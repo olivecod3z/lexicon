@@ -19,7 +19,7 @@ export default function Home() {
   const [previewReplay, setPreviewReplay] = useState(0);
   const toolkitStage = useRef<HTMLDivElement>(null);
   const [toolkitVisible, setToolkitVisible] = useState(false);
-  const [toolkitPaused, setToolkitPaused] = useState(true);
+  const [toolkitPaused, setToolkitPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(true);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {

@@ -4,7 +4,7 @@ Project: lexicon-aguet-20260928
 Website: https://lexicon-aguet-20260928.web.app
 Dashboard: https://lexicon-aguet-20260928.web.app/dashboard/
 
-The landing/ directory is unchanged from main commit 4373bc2.
+The landing page retains its design and content from main commit 4373bc2, with user-requested autoplay enabled for its demos and muted promotional video.
 Only the dashboard is restored to the original Python API study flow.
 
 Build on Windows from the repository root:

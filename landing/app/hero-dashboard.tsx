@@ -5,7 +5,7 @@ import { ArrowRight, ArrowUpRight, BookOpen, Chart, Check, ChevronRight, FileTex
 
 export default function HeroDashboard() {
   const [phase, setPhase] = useState(0);
-  const [paused, setPaused] = useState(true);
+  const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ left: 0, top: 0 });
   const [reduced, setReduced] = useState(true);
