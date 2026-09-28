@@ -83,7 +83,6 @@ export default function Home() {
         </div>
         <HeroDashboard />
         <div className="landscape-foreground" aria-hidden="true" />
-        <div className="landscape-caption"><span>A little clearer. A little more confident.</span><div><span><FileText size={17} /> Your notes.</span><span><Layers size={17} /> Your pace.</span><span><CheckCircle2 size={17} /> Your lightbulb moment.</span></div></div>
       </section>
 
 
