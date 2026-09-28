@@ -75,3 +75,15 @@ My materials provides removal. Files are never sent to an API in this mode.
 
 Run `npm run test:library` to check storage, metadata boundaries, validation, and deletion.
 Local development without the hosted flag continues to use the Python API.
+
+## Guided onboarding
+
+Open `/dashboard/?onboarding=1` on the hosted site (or `/?onboarding=1` locally).
+The four steps introduce the tools, collect an optional first name and course,
+accept a lecture or prepared sample, and open the study workspace.
+This is guest setup, not authentication. Course metadata and prepared resources
+are saved in this browser under `lexicon-onboarding-v1`; clearing site data
+removes them. Hosted uploads use the existing IndexedDB library. Local mode
+uses the Python API and creates notes from a real upload. The sample uses
+prewritten notes/flashcards and includes a short interactive recall question.
+Account creation, cross-device sync, and online generation remain separate work.

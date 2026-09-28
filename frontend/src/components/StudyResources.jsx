@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Icon from './Icon'
 
 export function StudyNotes({ notes }) {
-  return <article className="study-paper notes-reader"><h2>{notes.title}</h2><p>{notes.overview}</p><section><h3>What you’ll learn</h3><ul>{notes.learning_objectives.map((goal, index) => <li key={index}>{goal}</li>)}</ul></section>{notes.sections.map((section, index) => <section key={index}><h3>{section.heading}</h3><p>{section.explanation}</p><ul>{section.key_points.map((point, i) => <li key={i}>{point}</li>)}</ul></section>)}<p className="source-reminder">Generated from your lecture. Check important details against the original material.</p></article>
+  return <article className="study-paper notes-reader"><h2>{notes.title}</h2><p>{notes.overview}</p><section><h3>What you’ll learn</h3><ul>{notes.learning_objectives.map((goal, index) => <li key={index}>{goal}</li>)}</ul></section>{notes.sections.map((section, index) => <section key={index}><h3>{section.heading}</h3><p>{section.explanation}</p><ul>{section.key_points.map((point, i) => <li key={i}>{point}</li>)}</ul></section>)}<p className="source-reminder">Check important details against the original lecture material.</p></article>
 }
 
 export function FlashcardReview({ cards }) {
