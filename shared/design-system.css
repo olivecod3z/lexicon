@@ -1,6 +1,6 @@
 /* Lexicon: shared semantic tokens and interaction rules for both applications. */
 :root {
-  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-body: 'Manrope', system-ui, sans-serif;
   --font-heading: 'Manrope', system-ui, sans-serif;
   --type-caption: .75rem; --type-small: .875rem; --type-body: 1rem;
   --type-lead: 1.125rem; --type-h3: 1.25rem;
@@ -40,3 +40,7 @@ p { text-wrap: pretty; }
   html { scroll-behavior: auto !important; }
   *,*::before,*::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* Keep typography consistent across marketing and study surfaces. */
+body, body :where(button,input,textarea,select,pre,code) { font-family: var(--font-body); }
+h1,h2,h3,h4,h5,h6,h1 *,h2 *,h3 *,h4 *,h5 *,h6 * { font-weight: 500 !important; }

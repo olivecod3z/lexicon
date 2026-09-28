@@ -21,10 +21,8 @@ export default function StoryVideo() {
 
   return <section className="story-section wrap" aria-labelledby="story-title">
     <div className="story-copy">
-      <div className="eyebrow">A clearer way to study</div>
       <h2 id="story-title">See the study routine<br /><span className="heading-continuation">come to life.</span></h2>
       <p>A short introduction to the idea behind Lexicon: turn your lectures into notes, practise what you know, and make room for understanding.</p>
-      <p className="story-disclosure">Ai-generated promotional video.</p>
       <p className="story-availability">You can upload and read documents in the live dashboard today. Automated study tools shown in the video are not connected online yet.</p>
       <a className="button lime" href="/dashboard/">Open student dashboard</a>
     </div>
