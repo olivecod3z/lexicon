@@ -1,5 +1,6 @@
 """HTTP API for Lexicon's study-material workflow."""
 
+import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -40,6 +41,17 @@ TEXT_PREVIEW_LENGTH = 500
 
 app = FastAPI(title="Lexicon API", version="0.1.0")
 practice_sessions: dict[str, PracticeSet] = {}
+HOSTED = bool(os.getenv("K_SERVICE"))
+if HOSTED:
+    from app.cloud_store import (save_material, get_material, list_materials, delete_material,
+        save_quiz, get_quiz, save_attempt, list_attempts, save_practice, get_practice)
+    from app.hosted_access import require_preview_access
+    from fastapi.middleware.cors import CORSMiddleware
+    app.middleware("http")(require_preview_access)
+    app.add_middleware(CORSMiddleware,
+        allow_origins=["https://lexicon-aguet-20260928.web.app", "https://lexicon-aguet-20260928.firebaseapp.com"],
+        allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "X-Lexicon-Access"])
+
 
 
 class ExtractionResponse(BaseModel):
@@ -81,7 +93,7 @@ async def read_supported_upload(file: UploadFile) -> tuple[str, bytes]:
         allowed = ", ".join(sorted(SUPPORTED_EXTENSIONS))
         raise HTTPException(status_code=400, detail=f"Please upload one of: {allowed}.")
 
-    file_bytes = await file.read()
+    file_bytes = await file.read(MAX_UPLOAD_SIZE_BYTES + 1)
     if not file_bytes:
         raise HTTPException(status_code=400, detail="The uploaded file is empty.")
     if len(file_bytes) > MAX_UPLOAD_SIZE_BYTES:
@@ -271,12 +283,21 @@ def create_mixed_practice(material_id: str) -> PracticeSet:
 def create_practice_session(material_id: str) -> dict:
     practice = create_mixed_practice(material_id)
     practice_id = str(uuid4())
-    practice_sessions[practice_id] = practice
+    if HOSTED:
+        try:
+            save_practice(practice_id, practice)
+        except MaterialStorageError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+    else:
+        practice_sessions[practice_id] = practice
     return {"practice_id": practice_id, "practice": practice}
 
 @app.post("/practice-sessions/{practice_id}/submit", response_model=PracticeResult)
 def submit_practice(practice_id: str, submission: PracticeSubmission) -> PracticeResult:
-    practice = practice_sessions.get(practice_id)
+    try:
+        practice = get_practice(practice_id) if HOSTED else practice_sessions.get(practice_id)
+    except MaterialStorageError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
     if practice is None: raise HTTPException(status_code=404, detail="Practice set not found.")
     return score_practice(practice, submission)
 

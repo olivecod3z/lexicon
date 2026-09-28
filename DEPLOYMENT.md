@@ -18,6 +18,7 @@ Pop-Location
 Push-Location frontend
 npm.cmd ci
 $env:VITE_BASE_PATH='/dashboard/'
+$env:VITE_API_BASE_URL='https://lexicon-api-600311691439.europe-west1.run.app'
 npm.cmd run build
 Pop-Location
 New-Item -ItemType Directory -Force hosting-dist
@@ -29,7 +30,18 @@ firebase deploy --only hosting --project lexicon-aguet-20260928
 
 Use a fresh hosting-dist folder when rebuilding to avoid retaining obsolete assets.
 
-This deployment publishes the website only. The Python API is not deployed or
-routed by the current Firebase configuration. Uploads and AI generation cannot
-work online until that backend is connected. They still use the existing local
-backend during local development. No paid backend services are enabled here.
+The dashboard connects directly over HTTPS to the Python service on Cloud Run
+in europe-west1. The landing page remains public. The dashboard requires the
+lexicon-preview-access code from Secret Manager; this is a single shared private
+workspace, not multi-user authentication. Do not distribute the code publicly.
+
+Cloud Run uses the lexicon-api service account and Firestore for materials,
+quizzes, attempts and practice sessions. OPENAI_API_KEY and LEXICON_ACCESS_KEY
+come from Secret Manager. Never put either in frontend environment variables.
+
+The preview allows 20 upload attempts and 30 generation requests per UTC day,
+plus 100 practice/quiz submissions. Failed attempts also count. Saved lectures
+are limited to 60,000 readable characters and the library lists the newest 100.
+Generation results are still held in the browser for the current visit, except
+saved quizzes and practice sessions. Scaling is configured for zero idle
+instances and one maximum instance; these settings are not a monetary cap.

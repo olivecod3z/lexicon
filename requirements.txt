@@ -8,3 +8,5 @@ openai
 python-dotenv
 pytest
 httpx
+
+google-cloud-firestore>=2.21,<3

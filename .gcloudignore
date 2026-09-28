@@ -1,0 +1,9 @@
+# Only the backend source and dependency manifest are sent to Cloud Build.
+**
+!Dockerfile
+!requirements.txt
+!app/
+!app/**
+app/**/__pycache__/
+app/**/*.pyc
+app/**/.env*
