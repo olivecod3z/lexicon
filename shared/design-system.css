@@ -47,3 +47,6 @@ h1,h2,h3,h4,h5,h6,h1 *,h2 *,h3 *,h4 *,h5 *,h6 * { font-weight: 500 !important; }
 
 /* Match every action control to the pricing-card button shape. */
 button, .button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"], .story-play-icon { border-radius: var(--radius-button) !important; }
+
+/* Underlined navigation tabs use straight indicators, not button corners. */
+.segmented button, .demo-tabs button, .tool-overview button { border-radius: 0 !important; }
