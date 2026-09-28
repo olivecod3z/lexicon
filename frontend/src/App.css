@@ -344,3 +344,19 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
   .result-row>div { flex-basis: 60%; }
   .card-controls .muted { text-align: center; font-size: 10px; }
 }
+
+/* A quiet library placeholder; the book motion is decorative, not a loading indicator. */
+.library-state { display:flex; flex-direction:column; align-items:center; text-align:center; padding:38px 20px 42px; border:1px solid var(--border); border-radius:18px; background:var(--surface, #fff); }
+.library-state h3 { margin:20px 0 8px; font-size:18px; color:var(--forest); }
+.library-state p { margin:0 0 18px; max-width:360px; color:var(--text-secondary); font-size:14px; line-height:1.6; }
+.library-state .button { font-size:13px; }
+.library-book { position:relative; width:112px; height:76px; perspective:420px; margin:10px 0; }
+.book-cover { position:absolute; inset:8px -5px -5px; background:#dce9cf; border:2px solid #79936d; border-radius:7px 7px 12px 12px; box-shadow:0 10px 18px #283d2310; }
+.book-left,.book-right,.book-leaf { position:absolute; top:0; width:56px; height:72px; border:1px solid #cad5c1; background:repeating-linear-gradient(to bottom,#fffef8 0 12px,#e5eadc 12px 13px,#fffef8 13px 20px); }
+.book-left { left:0; border-radius:7px 2px 2px 7px; transform:rotate(-5deg); transform-origin:right bottom; }
+.book-right { left:56px; border-radius:2px 7px 7px 2px; transform:rotate(5deg); transform-origin:left bottom; }
+.book-leaf { left:56px; transform-origin:left center; border-radius:2px 7px 7px 2px; animation:library-page-turn 4.8s ease-in-out 2; }
+.leaf-two { animation-delay:.35s; }
+.leaf-three { animation-delay:.7s; }
+@keyframes library-page-turn { 0%,18% { transform:rotateY(0deg); } 65%,85% { transform:rotateY(-165deg); } 100% { transform:rotateY(0deg); } }
+@media(prefers-reduced-motion:reduce) { .book-leaf { animation:none; } }
