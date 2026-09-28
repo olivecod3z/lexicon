@@ -60,18 +60,20 @@ Change `--surface-blue` in `src/App.css`, then inspect the resume strip. Next tr
 how `resources[materialId]` keeps one lecture's answers separate from another.
 Colors describe presentation; React state describes the current study session.
 
-## Hosted browser library
+## Hosted dashboard
 
-The hosted build uses a device-local library (`src/browser-library.js`) instead of the Python API.
-PDF.js extracts selectable PDF text in a worker; the original file and text are stored in IndexedDB.
-Drag/drop or select multiple PDF/TXT files, each up to 25 MB. The local cap is 100 MB
-including extracted text; PDFs are limited to 500 pages. Scanned PDFs remain viewable
-without OCR. Password-protected or invalid PDFs show an error.
+The dashboard uses the same Python API flow locally and when built for hosting:
+upload a lecture, generate notes or flashcards, create practice, and submit answers.
+The hosting build sets VITE_BASE_PATH=/dashboard/ only for asset URLs; it no longer
+switches to the browser-only library that disabled generation.
 
-Refreshes preserve the library, but clearing browser data removes it. There is no
-account sync, cloud backup, or live AI generation. Keep original copies outside the app.
-The Original lecture tab provides a PDF viewer, readable extracted text and a download.
-My materials provides removal. Files are never sent to an API in this mode.
+Deployment is not complete until the Python backend is hosted and Firebase routes
+/materials/**, /quizzes/** and /practice-sessions/** (including their collection
+paths) to that service. Current firebase.json has dashboard rewrites only.
+Do not publish this as a working online MVP until that connection is configured
+and verified. Never point a public deployment at localhost or put an AI key in Vite.
+The backend currently has no account isolation or usage limits; those need an
+explicit deployment decision before exposing student data and paid generation.
 
-Run `npm run test:library` to check storage, metadata boundaries, validation, and deletion.
-Local development without the hosted flag continues to use the Python API.
+Existing browser-only uploads are not migrated or deleted by this restoration.
+Re-upload original files to use them with the Python study flow.
