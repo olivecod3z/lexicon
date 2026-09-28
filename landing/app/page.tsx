@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import StepAnimation from './step-animation';
 import HeroDashboard from './hero-dashboard';
 import Pricing from './pricing';
+import StoryVideo from './story-video';
 import FocusFeatures from './focus-features';
 import { ArrowUpRight, ArrowRight, BookOpen, Layers, Check, ChevronDown, ChevronLeft, ChevronRight, Upload, FileText, X, Menu, RotateCw, CheckCircle2, Zap, Pause, Play } from './icons';
 
@@ -94,6 +95,8 @@ export default function Home() {
           <article><div className="step-number">03</div><h3>Find your next “aha.”</h3><p>Test what you know, spot what needs another look, and come back with a little more confidence.</p><StepAnimation type="improve" /></article>
         </div>
       </section>
+
+      <StoryVideo />
 
       <section id="demo" className="toolkit-section wrap">
         <div className="toolkit-heading"><div><div className="eyebrow">Your study toolkit</div><h2>One lecture.<br />A whole new way to learn.</h2><a href="#study-panel" className="button lime">Explore the study pack <ArrowRight size={15} /></a></div><p>Turn a lecture into a connected study experience. Find the big ideas, make them stick, and see what needs another look—all in one place.</p></div>
