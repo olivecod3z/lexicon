@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from app.hosted_access import require_preview_access
+from app.hosted_access import enforce_preview_limits
 
 
 def client():
     app = FastAPI()
-    app.middleware("http")(require_preview_access)
+    app.middleware("http")(enforce_preview_limits)
     @app.get("/materials")
     def materials():
         return []
@@ -18,22 +18,18 @@ def client():
     return TestClient(app)
 
 
-def test_access_requires_configured_secret(monkeypatch):
-    monkeypatch.delenv("LEXICON_ACCESS_KEY", raising=False)
-    assert client().get("/materials").status_code == 503
+def test_library_opens_without_passcode():
+    response = client().get("/materials")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
     assert client().get("/health").status_code == 200
 
 
-def test_access_and_no_cache(monkeypatch):
-    monkeypatch.setenv("LEXICON_ACCESS_KEY", "test-only-code")
-    assert client().get("/materials").status_code == 401
-    assert client().get("/materials", headers={"X-Lexicon-Access": "wrong"}).status_code == 401
-    response = client().get("/materials", headers={"X-Lexicon-Access": "test-only-code"})
-    assert response.status_code == 200
-    assert response.headers["cache-control"] == "private, no-store"
-
-
-def test_daily_cap_blocks_upload(monkeypatch):
-    monkeypatch.setenv("LEXICON_ACCESS_KEY", "test-only-code")
+def test_daily_cap_still_blocks_upload(monkeypatch):
     monkeypatch.setattr("app.cloud_store.reserve_request", lambda kind, limit: False)
-    assert client().post("/materials", headers={"X-Lexicon-Access": "test-only-code"}).status_code == 429
+    assert client().post("/materials").status_code == 429
+
+
+def test_upload_within_daily_limit(monkeypatch):
+    monkeypatch.setattr("app.cloud_store.reserve_request", lambda kind, limit: True)
+    assert client().post("/materials").status_code == 200

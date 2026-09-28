@@ -31,13 +31,13 @@ firebase deploy --only hosting --project lexicon-aguet-20260928
 Use a fresh hosting-dist folder when rebuilding to avoid retaining obsolete assets.
 
 The dashboard connects directly over HTTPS to the Python service on Cloud Run
-in europe-west1. The landing page remains public. The dashboard requires the
-lexicon-preview-access code from Secret Manager; this is a single shared private
-workspace, not multi-user authentication. Do not distribute the code publicly.
+in europe-west1. The landing page remains public. The dashboard opens without a passcode at the owner's request. This is one shared
+workspace: anyone with the URL can access or delete materials and use the shared
+daily allowance. Individual accounts and private libraries are not implemented.
 
 Cloud Run uses the lexicon-api service account and Firestore for materials,
-quizzes, attempts and practice sessions. OPENAI_API_KEY and LEXICON_ACCESS_KEY
-come from Secret Manager. Never put either in frontend environment variables.
+quizzes, attempts and practice sessions. OPENAI_API_KEY comes from Secret Manager. Never put it in frontend environment
+variables. The old preview-access secret is no longer used by the app.
 
 The preview allows 20 upload attempts and 30 generation requests per UTC day,
 plus 100 practice/quiz submissions. Failed attempts also count. Saved lectures

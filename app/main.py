@@ -45,9 +45,9 @@ HOSTED = bool(os.getenv("K_SERVICE"))
 if HOSTED:
     from app.cloud_store import (save_material, get_material, list_materials, delete_material,
         save_quiz, get_quiz, save_attempt, list_attempts, save_practice, get_practice)
-    from app.hosted_access import require_preview_access
+    from app.hosted_access import enforce_preview_limits
     from fastapi.middleware.cors import CORSMiddleware
-    app.middleware("http")(require_preview_access)
+    app.middleware("http")(enforce_preview_limits)
     app.add_middleware(CORSMiddleware,
         allow_origins=["https://lexicon-aguet-20260928.web.app", "https://lexicon-aguet-20260928.firebaseapp.com"],
         allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "X-Lexicon-Access"])
