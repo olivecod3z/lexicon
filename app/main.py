@@ -4,11 +4,12 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 
 from app.document_text import DocumentExtractionError, SUPPORTED_EXTENSIONS, extract_text
+from app.auth import AuthenticatedUser, current_user
 from app.flashcards import FlashcardGenerationError, FlashcardSet, generate_flashcards
 from app.mcqs import MCQGenerationError, MCQSet, generate_mcqs
 from app.materials import (
@@ -50,7 +51,7 @@ if HOSTED:
     app.middleware("http")(enforce_preview_limits)
     app.add_middleware(CORSMiddleware,
         allow_origins=["https://lexicon-aguet-20260928.web.app", "https://lexicon-aguet-20260928.firebaseapp.com"],
-        allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "X-Lexicon-Access"])
+        allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "Authorization"])
 
 
 
@@ -113,20 +114,20 @@ def material_response(material: StoredMaterial) -> MaterialResponse:
     )
 
 
-def load_material_or_404(material_id: str) -> StoredMaterial:
+def load_material_or_404(owner_id: str, material_id: str) -> StoredMaterial:
     """Translate storage-layer exceptions into clear HTTP responses."""
     try:
-        return get_material(material_id)
+        return get_material(owner_id, material_id) if HOSTED else get_material(material_id)
     except MaterialNotFoundError as error:
         raise HTTPException(status_code=404, detail="Material not found.") from error
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
-def load_quiz_or_404(quiz_id: str):
+def load_quiz_or_404(owner_id: str, quiz_id: str):
     """Load a saved quiz or turn storage failures into HTTP responses."""
     try:
-        return get_quiz(quiz_id)
+        return get_quiz(owner_id, quiz_id) if HOSTED else get_quiz(quiz_id)
     except MaterialNotFoundError as error:
         raise HTTPException(status_code=404, detail="Quiz not found.") from error
     except MaterialStorageError as error:
@@ -134,13 +135,14 @@ def load_quiz_or_404(quiz_id: str):
 
 
 @app.post("/materials", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED)
-async def upload_material(file: UploadFile = File(...)) -> MaterialResponse:
+async def upload_material(file: UploadFile = File(...), user: AuthenticatedUser = Depends(current_user)) -> MaterialResponse:
     """Extract and save one material so later study features can reuse it."""
     filename, file_bytes = await read_supported_upload(file)
 
     try:
         source_text, unit_count = extract_text(filename, file_bytes)
-        return material_response(save_material(filename, source_text, unit_count))
+        saved = save_material(user.uid, filename, source_text, unit_count) if HOSTED else save_material(filename, source_text, unit_count)
+        return material_response(saved)
     except DocumentExtractionError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except MaterialStorageError as error:
@@ -148,25 +150,26 @@ async def upload_material(file: UploadFile = File(...)) -> MaterialResponse:
 
 
 @app.get("/materials", response_model=list[MaterialResponse])
-def get_material_library() -> list[MaterialResponse]:
+def get_material_library(user: AuthenticatedUser = Depends(current_user)) -> list[MaterialResponse]:
     """Return this local workspace's library, with lecture content excluded."""
     try:
-        return [MaterialResponse(**item) for item in list_materials()]
+        items = list_materials(user.uid) if HOSTED else list_materials()
+        return [MaterialResponse(**item) for item in items]
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
 @app.get("/materials/{material_id}", response_model=MaterialResponse)
-def get_saved_material(material_id: str) -> MaterialResponse:
+def get_saved_material(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> MaterialResponse:
     """Return saved material metadata, without returning its lecture content."""
-    return material_response(load_material_or_404(material_id))
+    return material_response(load_material_or_404(user.uid, material_id))
 
 
 @app.delete("/materials/{material_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove_material(material_id: str) -> Response:
+def remove_material(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> Response:
     """Allow a student to remove locally stored extracted material."""
     try:
-        delete_material(material_id)
+        delete_material(user.uid, material_id) if HOSTED else delete_material(material_id)
     except MaterialNotFoundError as error:
         raise HTTPException(status_code=404, detail="Material not found.") from error
     except MaterialStorageError as error:
@@ -181,7 +184,7 @@ def remove_material(material_id: str) -> Response:
     status_code=status.HTTP_200_OK,
     include_in_schema=False,
 )
-async def extract_material(file: UploadFile = File(...)) -> ExtractionResponse:
+async def extract_material(file: UploadFile = File(...), user: AuthenticatedUser = Depends(current_user)) -> ExtractionResponse:
     """Accept one supported material file and return a preview of its text."""
     filename, file_bytes = await read_supported_upload(file)
 
@@ -199,7 +202,7 @@ async def extract_material(file: UploadFile = File(...)) -> ExtractionResponse:
 
 
 @app.post("/materials/study-pack", response_model=StudyPack, include_in_schema=False)
-async def create_study_pack(file: UploadFile = File(...)) -> StudyPack:
+async def create_study_pack(file: UploadFile = File(...), user: AuthenticatedUser = Depends(current_user)) -> StudyPack:
     """Extract a supported file and generate source-grounded study notes."""
     filename, file_bytes = await read_supported_upload(file)
 
@@ -213,7 +216,7 @@ async def create_study_pack(file: UploadFile = File(...)) -> StudyPack:
 
 
 @app.post("/materials/flashcards", response_model=FlashcardSet, include_in_schema=False)
-async def create_flashcards(file: UploadFile = File(...)) -> FlashcardSet:
+async def create_flashcards(file: UploadFile = File(...), user: AuthenticatedUser = Depends(current_user)) -> FlashcardSet:
     """Extract a supported file and create validated active-recall flashcards."""
     filename, file_bytes = await read_supported_upload(file)
 
@@ -227,7 +230,7 @@ async def create_flashcards(file: UploadFile = File(...)) -> FlashcardSet:
 
 
 @app.post("/materials/mcqs", response_model=MCQSet, include_in_schema=False)
-async def create_mcqs(file: UploadFile = File(...)) -> MCQSet:
+async def create_mcqs(file: UploadFile = File(...), user: AuthenticatedUser = Depends(current_user)) -> MCQSet:
     """Extract a supported file and create validated quiz questions."""
     filename, file_bytes = await read_supported_upload(file)
 
@@ -241,9 +244,9 @@ async def create_mcqs(file: UploadFile = File(...)) -> MCQSet:
 
 
 @app.post("/materials/{material_id}/study-pack", response_model=StudyPack)
-def create_study_pack_from_saved_material(material_id: str) -> StudyPack:
+def create_study_pack_from_saved_material(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> StudyPack:
     """Generate notes from material saved by the upload-once workflow."""
-    material = load_material_or_404(material_id)
+    material = load_material_or_404(user.uid, material_id)
     try:
         return generate_study_pack(material.source_text)
     except (StudyPackGenerationError, TextChunkingError) as error:
@@ -251,9 +254,9 @@ def create_study_pack_from_saved_material(material_id: str) -> StudyPack:
 
 
 @app.post("/materials/{material_id}/flashcards", response_model=FlashcardSet)
-def create_flashcards_from_saved_material(material_id: str) -> FlashcardSet:
+def create_flashcards_from_saved_material(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> FlashcardSet:
     """Generate flashcards from material saved by the upload-once workflow."""
-    material = load_material_or_404(material_id)
+    material = load_material_or_404(user.uid, material_id)
     try:
         return generate_flashcards(material.source_text)
     except (FlashcardGenerationError, TextChunkingError) as error:
@@ -261,9 +264,9 @@ def create_flashcards_from_saved_material(material_id: str) -> FlashcardSet:
 
 
 @app.post("/materials/{material_id}/mcqs", response_model=MCQSet)
-def create_mcqs_from_saved_material(material_id: str) -> MCQSet:
+def create_mcqs_from_saved_material(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> MCQSet:
     """Generate MCQs from material saved by the upload-once workflow."""
-    material = load_material_or_404(material_id)
+    material = load_material_or_404(user.uid, material_id)
     try:
         return generate_mcqs(material.source_text)
     except (MCQGenerationError, TextChunkingError) as error:
@@ -271,21 +274,21 @@ def create_mcqs_from_saved_material(material_id: str) -> MCQSet:
 
 
 @app.post("/materials/{material_id}/practice", response_model=PracticeSet)
-def create_mixed_practice(material_id: str) -> PracticeSet:
+def create_mixed_practice(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> PracticeSet:
     """Generate MCQ, keyword-recall, and theory practice from one material."""
-    material = load_material_or_404(material_id)
+    material = load_material_or_404(user.uid, material_id)
     try:
         return generate_practice(material.source_text)
     except (PracticeGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 @app.post("/materials/{material_id}/practice-session")
-def create_practice_session(material_id: str) -> dict:
-    practice = create_mixed_practice(material_id)
+def create_practice_session(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> dict:
+    practice = create_mixed_practice(material_id, user)
     practice_id = str(uuid4())
     if HOSTED:
         try:
-            save_practice(practice_id, practice)
+            save_practice(user.uid, practice_id, practice)
         except MaterialStorageError as error:
             raise HTTPException(status_code=503, detail=str(error)) from error
     else:
@@ -293,9 +296,9 @@ def create_practice_session(material_id: str) -> dict:
     return {"practice_id": practice_id, "practice": practice}
 
 @app.post("/practice-sessions/{practice_id}/submit", response_model=PracticeResult)
-def submit_practice(practice_id: str, submission: PracticeSubmission) -> PracticeResult:
+def submit_practice(practice_id: str, submission: PracticeSubmission, user: AuthenticatedUser = Depends(current_user)) -> PracticeResult:
     try:
-        practice = get_practice(practice_id) if HOSTED else practice_sessions.get(practice_id)
+        practice = get_practice(user.uid, practice_id) if HOSTED else practice_sessions.get(practice_id)
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     if practice is None: raise HTTPException(status_code=404, detail="Practice set not found.")
@@ -303,11 +306,11 @@ def submit_practice(practice_id: str, submission: PracticeSubmission) -> Practic
 
 
 @app.post("/materials/{material_id}/quizzes", response_model=QuizForStudent, status_code=status.HTTP_201_CREATED)
-def create_saved_quiz(material_id: str) -> QuizForStudent:
+def create_saved_quiz(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> QuizForStudent:
     """Generate and save an MCQ quiz from a material for later quiz-taking."""
-    material = load_material_or_404(material_id)
+    material = load_material_or_404(user.uid, material_id)
     try:
-        quiz = save_quiz(material_id, generate_mcqs(material.source_text))
+        quiz = save_quiz(user.uid, material_id, generate_mcqs(material.source_text)) if HOSTED else save_quiz(material_id, generate_mcqs(material.source_text))
     except (MCQGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except MaterialStorageError as error:
@@ -317,19 +320,19 @@ def create_saved_quiz(material_id: str) -> QuizForStudent:
 
 
 @app.get("/quizzes/{quiz_id}", response_model=QuizForStudent)
-def get_saved_quiz(quiz_id: str) -> QuizForStudent:
+def get_saved_quiz(quiz_id: str, user: AuthenticatedUser = Depends(current_user)) -> QuizForStudent:
     """Return a saved quiz without exposing its correct options."""
-    quiz = load_quiz_or_404(quiz_id)
+    quiz = load_quiz_or_404(user.uid, quiz_id)
     return quiz_for_student(quiz.id, quiz.material_id, quiz.mcq_set, quiz.created_at)
 
 
 @app.post("/quizzes/{quiz_id}/attempts", response_model=QuizAttemptResult)
-def submit_quiz_attempt(quiz_id: str, attempt: QuizAttemptRequest) -> QuizAttemptResult:
+def submit_quiz_attempt(quiz_id: str, attempt: QuizAttemptRequest, user: AuthenticatedUser = Depends(current_user)) -> QuizAttemptResult:
     """Grade student choices using the server-side quiz answer key."""
-    quiz = load_quiz_or_404(quiz_id)
+    quiz = load_quiz_or_404(user.uid, quiz_id)
     try:
         result = score_quiz(quiz.mcq_set, attempt)
-        saved_attempt = save_attempt(quiz_id, result.model_dump_json())
+        saved_attempt = save_attempt(user.uid, quiz_id, result.model_dump_json()) if HOSTED else save_attempt(quiz_id, result.model_dump_json())
         return result.model_copy(update={"attempt_id": saved_attempt.id, "submitted_at": saved_attempt.created_at})
     except QuizScoringError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
@@ -338,15 +341,15 @@ def submit_quiz_attempt(quiz_id: str, attempt: QuizAttemptRequest) -> QuizAttemp
 
 
 @app.get("/quizzes/{quiz_id}/attempts", response_model=list[QuizAttemptResult])
-def get_quiz_attempt_history(quiz_id: str) -> list[QuizAttemptResult]:
+def get_quiz_attempt_history(quiz_id: str, user: AuthenticatedUser = Depends(current_user)) -> list[QuizAttemptResult]:
     """Return a quiz's saved attempt history, newest first."""
-    load_quiz_or_404(quiz_id)
+    load_quiz_or_404(user.uid, quiz_id)
     try:
         return [
             QuizAttemptResult.model_validate_json(attempt.result_json).model_copy(
                 update={"attempt_id": attempt.id, "submitted_at": attempt.created_at}
             )
-            for attempt in list_attempts(quiz_id)
+            for attempt in (list_attempts(user.uid, quiz_id) if HOSTED else list_attempts(quiz_id))
         ]
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error

@@ -23,63 +23,65 @@ def guarded(function):
     return run
 
 @guarded
-def save_material(filename, source_text, unit_count):
+def save_material(owner_id, filename, source_text, unit_count):
     if len(source_text) > 60000:
         raise MaterialStorageError("For this preview, split lectures into files with at most 60,000 readable characters.")
     material = StoredMaterial(str(uuid4()), filename, source_text, unit_count, len(source_text), datetime.now(UTC).isoformat())
-    database().collection("materials").document(material.id).set(asdict(material))
+    database().collection("materials").document(material.id).set({**asdict(material), "owner_id": owner_id})
     return material
 
 @guarded
-def get_material(material_id):
+def get_material(owner_id, material_id):
     value = database().collection("materials").document(material_id).get().to_dict()
-    if value is None:
+    if value is None or value.get("owner_id") != owner_id:
         raise MaterialNotFoundError(material_id)
+    value.pop("owner_id", None)
     return StoredMaterial(**value)
 
 @guarded
-def list_materials():
+def list_materials(owner_id):
     fields = ["id", "filename", "unit_count", "character_count", "created_at"]
-    return [doc.to_dict() for doc in database().collection("materials").select(fields).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()]
+    return [doc.to_dict() for doc in database().collection("materials").where("owner_id", "==", owner_id).select(fields).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()]
 
 @guarded
-def delete_material(material_id):
-    get_material(material_id)
+def delete_material(owner_id, material_id):
+    get_material(owner_id, material_id)
     database().collection("materials").document(material_id).delete()
 
 @guarded
-def save_quiz(material_id, mcq_set):
+def save_quiz(owner_id, material_id, mcq_set):
     quiz = StoredQuiz(str(uuid4()), material_id, mcq_set, datetime.now(UTC).isoformat())
-    database().collection("quizzes").document(quiz.id).set({"id": quiz.id, "material_id": material_id, "mcq_set_json": mcq_set.model_dump_json(), "created_at": quiz.created_at})
+    database().collection("quizzes").document(quiz.id).set({"id": quiz.id, "owner_id": owner_id, "material_id": material_id, "mcq_set_json": mcq_set.model_dump_json(), "created_at": quiz.created_at})
     return quiz
 
 @guarded
-def get_quiz(quiz_id):
+def get_quiz(owner_id, quiz_id):
     value = database().collection("quizzes").document(quiz_id).get().to_dict()
-    if value is None:
+    if value is None or value.get("owner_id") != owner_id:
         raise MaterialNotFoundError(quiz_id)
+    value.pop("owner_id", None)
     value["mcq_set"] = MCQSet.model_validate_json(value.pop("mcq_set_json"))
     return StoredQuiz(**value)
 
 @guarded
-def save_attempt(quiz_id, result_json):
+def save_attempt(owner_id, quiz_id, result_json):
     attempt = StoredAttempt(str(uuid4()), quiz_id, result_json, datetime.now(UTC).isoformat())
-    database().collection("quizzes").document(quiz_id).collection("attempts").document(attempt.id).set(asdict(attempt))
+    database().collection("quizzes").document(quiz_id).collection("attempts").document(attempt.id).set({**asdict(attempt), "owner_id": owner_id})
     return attempt
 
 @guarded
-def list_attempts(quiz_id):
-    return [StoredAttempt(**doc.to_dict()) for doc in database().collection("quizzes").document(quiz_id).collection("attempts").order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()]
+def list_attempts(owner_id, quiz_id):
+    return [StoredAttempt(**{key: value for key, value in doc.to_dict().items() if key != "owner_id"}) for doc in database().collection("quizzes").document(quiz_id).collection("attempts").where("owner_id", "==", owner_id).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()]
 
 @guarded
-def save_practice(practice_id, practice):
-    database().collection("practice_sessions").document(practice_id).set({"practice": practice.model_dump_json()})
+def save_practice(owner_id, practice_id, practice):
+    database().collection("practice_sessions").document(practice_id).set({"owner_id": owner_id, "practice": practice.model_dump_json()})
 
 @guarded
-def get_practice(practice_id):
+def get_practice(owner_id, practice_id):
     from app.practice import PracticeSet
     value = database().collection("practice_sessions").document(practice_id).get().to_dict()
-    return PracticeSet.model_validate_json(value["practice"]) if value else None
+    return PracticeSet.model_validate_json(value["practice"]) if value and value.get("owner_id") == owner_id else None
 
 @guarded
 def reserve_request(kind, limit):

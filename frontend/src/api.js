@@ -1,8 +1,12 @@
+import { auth } from './firebase'
+
 export async function api(path, options) {
   let response
-  try { response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}${path}`, {
-    ...options,
-  }) }
+  const token = await auth.currentUser?.getIdToken()
+  if (!token) throw Error('Sign in to continue.')
+  const headers = new Headers(options?.headers)
+  headers.set('Authorization', `Bearer ${token}`)
+  try { response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}${path}`, { ...options, headers }) }
   catch { throw Error('Cannot reach Lexicon. Please try again in a moment.') }
   const data = await response.json().catch(() => null)
   if (!response.ok) {
