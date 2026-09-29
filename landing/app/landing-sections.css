@@ -349,11 +349,11 @@ h1, h2, h3, h4,
 @media(max-width:520px){.landscape-copy h1{font-size:34px;letter-spacing:-1.6px}.landscape-copy h1 br{display:none}}
 @media(prefers-reduced-motion:reduce){.button::before,.button>svg{transition:none}.button:hover>svg,.button:focus-visible>svg{transform:none}}
 
-/* Present the hero together instead of delaying its controls. */
-.landscape-hero{animation:hero-ready .45s ease-out backwards}
-@keyframes hero-ready{from{opacity:.7}to{opacity:1}}
+/* Keep the landscape still while its content arrives together. */
+.landscape-copy{animation:hero-ready .32s cubic-bezier(.22,1,.36,1) backwards}
+@keyframes hero-ready{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:600px){.landscape-background,.landscape-foreground{background-image:url('/images/study-landscape-mobile.webp')}}
-@media(prefers-reduced-motion:reduce){.landscape-hero{animation:none}}
+@media(prefers-reduced-motion:reduce){.landscape-copy{animation:none}}
 .eyebrow,.note-meta,.sample-badge,.toolkit-sidebar-label,.toolkit-callout>div>span,.focus-caption,.dash-label,.dash-day,.dash-sample,.demo-lesson-top,.practice-heading{letter-spacing:normal;text-transform:none}
 @media(prefers-reduced-motion:reduce){.landscape-header,.landscape-copy>h1,.landscape-copy>p,.landscape-actions{animation:none}}
 
@@ -361,9 +361,8 @@ h1, h2, h3, h4,
 .toolkit-stage{padding:42px 70px 106px;min-height:0}
 .toolkit-window{animation:none}
 .toolkit-window .demo-content{min-height:470px}
-.toolkit-panel{animation:toolkit-panel-in .5s cubic-bezier(.22,1,.36,1) both}
-.toolkit-panel>h3,.toolkit-panel>h4,.toolkit-panel>p,.toolkit-panel>.note-exercise{animation:toolkit-panel-in .65s .12s both}
-.toolkit-callout{display:none;top:auto;left:auto;right:24px;bottom:20px;max-width:280px;padding:12px 16px;animation-delay:0s}
+.toolkit-panel{animation:toolkit-panel-in .24s cubic-bezier(.22,1,.36,1) both}
+.toolkit-callout{display:none;top:auto;left:auto;right:24px;bottom:20px;max-width:280px;padding:12px 16px;animation-duration:.24s;animation-delay:0s}
 .toolkit-stage[data-preview="Notes"] .callout-notes,.toolkit-stage[data-preview="Flashcards"] .callout-flashcards,.toolkit-stage[data-preview="Quiz"] .callout-quiz{display:flex}
 .toolkit-callout div>span{display:none}
 .toolkit-callout p{margin-bottom:0}

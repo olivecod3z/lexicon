@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import usePageVisible from './use-page-visible';
 import { ArrowUp, BookOpen, Check, FileText, Layers, MousePointer2, Pause, Play, Zap } from './icons';
 
 type Step = 'upload' | 'generate' | 'improve';
@@ -10,7 +11,8 @@ const descriptions = {
   improve: 'A practice answer is checked, then learning progress grows.',
 };
 
-export default function StepAnimation({ type }: { type: Step }) {
+export default memo(function StepAnimation({ type }: { type: Step }) {
+  const pageVisible = usePageVisible();
   const container = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [paused, setPaused] = useState(true);
@@ -20,7 +22,7 @@ export default function StepAnimation({ type }: { type: Step }) {
     return () => observer.disconnect();
   }, []);
 
-  return <div ref={container} className={`step-motion motion-${type} ${paused || !visible ? 'motion-paused' : ''}`}>
+  return <div ref={container} className={`step-motion motion-${type} ${paused || !visible || !pageVisible ? 'motion-paused' : ''}`}>
     <div className="motion-scene" role="img" aria-label={descriptions[type]}>
       {type === 'upload' && <>
         <div className="motion-halo" />
@@ -45,4 +47,4 @@ export default function StepAnimation({ type }: { type: Step }) {
     </div>
     <button className="motion-control" onClick={() => setPaused(!paused)} aria-label={`${paused ? 'Play' : 'Pause'} ${type} animation`} aria-pressed={paused}>{paused ? <Play size={12} /> : <Pause size={12} />}</button>
   </div>;
-}
+});

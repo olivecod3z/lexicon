@@ -350,3 +350,6 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
 .hosting-preview a { color: var(--forest); text-decoration: underline; font-weight: 600; }
 
 .sidebar-bottom > a.text-button { color: var(--on-forest); display: block; padding: 12px; margin-bottom: 12px; text-decoration: underline; }
+.onboarding-course-summary { padding: 20px 24px; background: var(--surface-muted); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 24px; }
+.onboarding-course-summary p { margin: 6px 0; font-size: 14px; }
+.onboarding-course-summary a { color: var(--forest); display: inline-flex; align-items: center; gap: 8px; }

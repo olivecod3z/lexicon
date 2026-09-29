@@ -78,12 +78,23 @@ Local development without the hosted flag continues to use the Python API.
 
 ## Guided onboarding
 
-Open `/dashboard/?onboarding=1` on the hosted site (or `/?onboarding=1` locally).
-The four steps introduce the tools, collect an optional first name and course,
-accept a lecture or prepared sample, and open the study workspace.
-This is guest setup, not authentication. Course metadata and prepared resources
-are saved in this browser under `lexicon-onboarding-v1`; clearing site data
-removes them. Hosted uploads use the existing IndexedDB library. Local mode
-uses the Python API and creates notes from a real upload. The sample uses
-prewritten notes/flashcards and includes a short interactive recall question.
-Account creation, cross-device sync, and online generation remain separate work.
+The landing page's Get started button opens `/onboarding`. The three steps
+collect a name and study details, goals and daily pace, and an optional first
+course. The completion screen opens `/dashboard/`. Old
+`/dashboard/?onboarding=1` links redirect to the replacement flow.
+
+The draft and completed profile are saved under `lexicon.onboarding.v1`.
+The dashboard imports completed profiles into its existing
+`lexicon-onboarding-v1` workspace without replacing saved lectures, resources,
+or earlier courses. Editing updates only the course created by the new flow.
+The dashboard's Edit study setup link opens `/onboarding?edit=1`.
+
+Build both applications with `node scripts/build-hosting.mjs` from the repository
+root to test this journey on one origin. Hosted uploads still use the existing
+IndexedDB library; local dashboard development still uses the Python API.
+This is guest setup, not authentication. Account creation, cross-device sync,
+and online generation remain separate work. Clearing browser data removes the
+saved setup and local documents.
+
+Run `node --test tests/onboarding.test.mjs` from `frontend` for the profile
+handoff, editing, storage failures, and existing-data preservation checks.

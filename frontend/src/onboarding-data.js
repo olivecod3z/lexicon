@@ -1,7 +1,26 @@
 const KEY = 'lexicon-onboarding-v1'
 export function readSetup() {
-  try { return JSON.parse(localStorage.getItem(KEY)) || { courses: [], resources: {} } }
-  catch { return { courses: [], resources: {} } }
+  let setup = { courses: [], resources: {} }
+  try {
+    const stored = JSON.parse(localStorage.getItem(KEY))
+    if (stored && typeof stored === 'object' && !Array.isArray(stored)) {
+      setup = { ...stored, courses: Array.isArray(stored.courses) ? stored.courses : [], resources: stored.resources && typeof stored.resources === 'object' && !Array.isArray(stored.resources) ? stored.resources : {} }
+    }
+  } catch { /* The dashboard can open even when browser storage is unavailable. */ }
+
+  try {
+    const onboarding = JSON.parse(localStorage.getItem('lexicon.onboarding.v1'))
+    const profile = onboarding?.profile
+    if (onboarding?.version !== 1 || onboarding.complete !== true || !profile) return setup
+    if (typeof profile.name !== 'string' || !profile.name.trim() || profile.name.length > 40) return setup
+    if (typeof profile.course !== 'string' || profile.course.length > 100 || typeof profile.courseCode !== 'string' || profile.courseCode.length > 16) return setup
+    if (!Array.isArray(profile.goals) || !profile.goals.length || !profile.goals.every(goal => ['understand', 'remember', 'exams', 'routine'].includes(goal)) || ![10, 20, 30].includes(profile.minutes)) return setup
+
+    // Keep existing lectures and courses; edits replace only the new setup's course.
+    const courses = setup.courses.filter(course => course?.id !== 'onboarding-first-course')
+    if (profile.course.trim()) courses.push({ id: 'onboarding-first-course', name: profile.course.trim(), code: profile.courseCode.trim(), color: ['green', 'blue', 'rose', 'yellow'].includes(profile.color) ? profile.color : 'green' })
+    return { ...setup, name: profile.name.trim(), completed: true, goals: profile.goals, dailyMinutes: profile.minutes, courses }
+  } catch { return setup }
 }
 export function saveSetup(value) {
   try { localStorage.setItem(KEY, JSON.stringify(value)) }
