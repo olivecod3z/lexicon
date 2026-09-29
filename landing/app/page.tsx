@@ -76,13 +76,13 @@ export default function Home() {
           <nav id="landing-navigation" aria-label="Main navigation" className={menu ? 'nav open' : 'nav'}>
             <a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="#features" onClick={() => setMenu(false)}>Features</a><a href="#demo" onClick={() => setMenu(false)}>Study demo</a><a href="#pricing" onClick={() => setMenu(false)}>Pricing</a><a href="#faq" onClick={() => setMenu(false)}>Questions</a>
           </nav>
-          <Link className="button lime header-cta" href="/onboarding">Get started <ArrowUpRight size={14} /></Link>
+          <Link className="button lime header-cta" href="/dashboard/?onboarding=1">Get started <ArrowUpRight size={14} /></Link>
           <button ref={menuButton} aria-controls="landing-navigation" className="menu-toggle" onClick={() => setMenu(!menu)} aria-label={menu ? 'Close menu' : 'Open menu'} aria-expanded={menu}>{menu ? <X /> : <Menu />}</button>
         </header>
         <div className="landscape-copy">
           <h1 id="hero-title">Turn your lecture pdfs into<br />{' '}notes, flashcards, and quizzes</h1>
           <p>Understand the big ideas, test what you know,<br className="desktop-break" /> and focus on what needs another look.</p>
-          <div className="landscape-actions"><Link className="button lime" href="/onboarding">Get started <ArrowRight size={15} /></Link><a className="button charcoal" href="#how-it-works">See how it works</a></div>
+          <div className="landscape-actions"><Link className="button lime" href="/dashboard/?onboarding=1">Get started <ArrowRight size={15} /></Link><a className="button charcoal" href="#how-it-works">See how it works</a></div>
         </div>
         <HeroDashboard />
         <div className="landscape-foreground" aria-hidden="true" />

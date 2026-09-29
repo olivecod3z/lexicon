@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from '../firebase';
 import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronLeft, FileText, Layers, Sun, Zap } from '../icons';
 
 const STORAGE_KEY = 'lexicon.onboarding.v1';
@@ -56,6 +58,7 @@ function parseSetup(raw: string | null): Setup | null {
 }
 
 export default function Onboarding() {
+  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<Profile>(initialProfile);
   const [step, setStep] = useState(0);
   const [complete, setComplete] = useState(false);
@@ -68,6 +71,11 @@ export default function Onboarding() {
   const pendingSetup = useRef<Setup | null>(null);
   const lastSaved = useRef('');
   const selectedColor = colors.find(color => color.id === profile.color) ?? colors[0];
+
+  useEffect(() => onAuthStateChanged(auth, user => {
+    if (user) setAuthenticated(true);
+    else window.location.replace('/dashboard/?onboarding=1');
+  }), []);
 
   const saveSetup = useCallback(() => {
     if (!pendingSetup.current) return;
@@ -176,6 +184,8 @@ export default function Onboarding() {
     if (step < 2) goTo(step + 1);
     else finish();
   }
+
+  if (authenticated !== true) return <main className="onboarding-shell"><p className="setup-loading" role="status">Opening your study setup…</p></main>;
 
   return (
     <div className="onboarding-shell">

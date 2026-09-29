@@ -20,7 +20,10 @@ export default function AuthGate({ children }) {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => onAuthStateChanged(auth, setUser), [])
+  const openingOnboarding = Boolean(user && new URLSearchParams(window.location.search).has('onboarding'))
+  useEffect(() => { if (openingOnboarding) window.location.replace('/onboarding') }, [openingOnboarding])
   if (user === undefined) return <main className="auth-page"><p role="status">Opening your study space…</p></main>
+  if (openingOnboarding) return <main className="auth-page"><p role="status">Opening your study setup…</p></main>
   if (user) return <>{children}</>
 
   async function run(action) {
