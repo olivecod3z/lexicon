@@ -2,17 +2,16 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 import usePageVisible from './use-page-visible';
-import { ArrowRight, ArrowUpRight, BookOpen, Chart, Check, ChevronRight, FileText, Flame, Home, Layers, Search, Settings, Sun, Upload, Zap, MousePointer2, Pause, Play } from './icons';
+import { ArrowRight, ArrowUpRight, BookOpen, Chart, Check, ChevronRight, FileText, Flame, Home, Layers, Search, Settings, Sun, Upload, Zap, MousePointer2 } from './icons';
 
 export default memo(function HeroDashboard() {
   const pageVisible = usePageVisible();
   const [phase, setPhase] = useState(0);
-  const [paused, setPaused] = useState(true);
   const [visible, setVisible] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ left: 0, top: 0 });
   const [reduced, setReduced] = useState(true);
   const preview = useRef<HTMLDivElement>(null);
-  const playing = !paused && visible && pageVisible && !reduced;
+  const playing = visible && pageVisible && !reduced;
   const showingQuiz = phase >= 2 && phase <= 4 && !reduced;
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -69,7 +68,7 @@ export default memo(function HeroDashboard() {
       <span className="dash-settings"><Settings size={14} /> Settings</span>
     </aside>
     <div className="dash-body">
-      <div className="dash-toolbar"><span>Workspace <ChevronRight size={11} /><strong>Overview</strong></span><span className="dash-sample">{reduced || paused ? 'Sample workspace' : 'Playing demo'}</span>{!reduced && <button className="dash-demo-toggle" onClick={() => setPaused(!paused)} aria-label={paused ? 'Play dashboard demo' : 'Pause dashboard demo'} aria-pressed={paused}>{paused ? <Play size={12} /> : <Pause size={12} />}</button>}<span className="dash-search" role="img" aria-label="Search icon in illustrative preview"><Search size={15} /></span></div>
+      <div className="dash-toolbar"><span>Workspace <ChevronRight size={11} /><strong>Overview</strong></span><span className="dash-sample">Sample workspace</span><span className="dash-search" role="img" aria-label="Search icon in illustrative preview"><Search size={15} /></span></div>
       <div className="dash-content">
         <div className="dash-greeting"><div><span className="dash-day"><Sun size={12} /> A good day to learn</span><h2>A little progress, every day.</h2><p>Pick up where you left off. Your next lightbulb moment is waiting.</p></div><span className="dash-primary"><Zap size={13} />Quick practice</span></div>
         <div className="dash-metrics">
