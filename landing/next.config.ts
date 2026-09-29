@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  ...(process.env.FIREBASE_HOSTING === 'true' ? { output: 'export' as const } : { distDir: '.next-dev' }),
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
+  ...(process.env.FIREBASE_HOSTING === 'true' ? { output: 'export' as const } : {}),
 };
 
 export default nextConfig;

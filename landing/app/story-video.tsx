@@ -1,12 +1,27 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Play } from './icons';
 
 export default function StoryVideo() {
   const video = useRef<HTMLVideoElement>(null);
   const [started, setStarted] = useState(false);
   const [error, setError] = useState(false);
+
+  useEffect(() => {
+    const player = video.current;
+    if (!player) return;
+    player.muted = true;
+    let attempted = false;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !attempted) {
+        attempted = true;
+        player.play().catch(() => { attempted = false; });
+      }
+    }, { threshold: 0.15 });
+    observer.observe(player);
+    return () => observer.disconnect();
+  }, []);
 
   async function start() {
     const player = video.current;
@@ -28,11 +43,11 @@ export default function StoryVideo() {
     </div>
     <figure className="story-figure">
       <div className="story-player">
-        <video ref={video} src="/videos/lexicon-story.mp4" autoPlay muted loop controls playsInline preload="metadata" onPlaying={() => setStarted(true)} poster="/videos/lexicon-story-poster.jpg" tabIndex={0} aria-label="Lexicon promotional video, 57 seconds" aria-describedby="story-caption" onError={() => setError(true)} />
+        <video ref={video} src="/videos/lexicon-story-web.mp4" autoPlay muted loop controls playsInline preload="metadata" onPlaying={() => setStarted(true)} poster="/videos/lexicon-story-poster.jpg" tabIndex={0} aria-label="Lexicon promotional video, 57 seconds" aria-describedby="story-caption" onError={() => setError(true)} />
         {!started && <button className="story-play" onClick={start} aria-label="Watch Lexicon in action, 57 seconds"><span className="story-play-icon"><Play size={26} /></span><span>Watch Lexicon in action<small>57 sec · Starts muted</small></span></button>}
       </div>
       <figcaption id="story-caption">A little less overwhelm. A little more clarity.</figcaption>
-      {error && <p role="status">Having trouble playing? <a href="/videos/lexicon-story.mp4">Open the video directly</a>.</p>}
+      {error && <p role="status">Having trouble playing? <a href="/videos/lexicon-story-web.mp4">Open the video directly</a>.</p>}
     </figure>
   </section>;
 }

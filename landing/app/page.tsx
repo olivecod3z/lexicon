@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import usePageVisible from './use-page-visible';
 import StepAnimation from './step-animation';
 import HeroDashboard from './hero-dashboard';
 import Pricing from './pricing';
@@ -15,6 +17,7 @@ const cards = [
 ];
 
 export default function Home() {
+  const pageVisible = usePageVisible();
   const [tab, setTab] = useState('Notes');
   const [previewReplay, setPreviewReplay] = useState(0);
   const toolkitStage = useRef<HTMLDivElement>(null);
@@ -50,7 +53,7 @@ export default function Home() {
     setAnswer(null);
     setPreviewReplay(value => value + 1);
   };
-  const toolkitPlaying = toolkitVisible && !toolkitPaused && !reduceMotion;
+  const toolkitPlaying = toolkitVisible && pageVisible && !toolkitPaused && !reduceMotion;
   useEffect(() => {
     if (!toolkitPlaying) return;
     const action = window.setTimeout(() => {
@@ -73,13 +76,13 @@ export default function Home() {
           <nav id="landing-navigation" aria-label="Main navigation" className={menu ? 'nav open' : 'nav'}>
             <a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="#features" onClick={() => setMenu(false)}>Features</a><a href="#demo" onClick={() => setMenu(false)}>Study demo</a><a href="#pricing" onClick={() => setMenu(false)}>Pricing</a><a href="#faq" onClick={() => setMenu(false)}>Questions</a>
           </nav>
-          <a className="button lime header-cta" href="/dashboard/">Get started <ArrowUpRight size={14} /></a>
+          <Link className="button lime header-cta" href="/onboarding">Get started <ArrowUpRight size={14} /></Link>
           <button ref={menuButton} aria-controls="landing-navigation" className="menu-toggle" onClick={() => setMenu(!menu)} aria-label={menu ? 'Close menu' : 'Open menu'} aria-expanded={menu}>{menu ? <X /> : <Menu />}</button>
         </header>
         <div className="landscape-copy">
           <h1 id="hero-title">Turn your lecture pdfs into<br />{' '}notes, flashcards, and quizzes</h1>
           <p>Understand the big ideas, test what you know,<br className="desktop-break" /> and focus on what needs another look.</p>
-          <div className="landscape-actions"><a className="button lime" href="/dashboard/">Open student dashboard <ArrowRight size={15} /></a><a className="button charcoal" href="#how-it-works">See how it works</a></div>
+          <div className="landscape-actions"><Link className="button lime" href="/onboarding">Get started <ArrowRight size={15} /></Link><a className="button charcoal" href="#how-it-works">See how it works</a></div>
         </div>
         <HeroDashboard />
         <div className="landscape-foreground" aria-hidden="true" />
@@ -101,7 +104,7 @@ export default function Home() {
         <div className="toolkit-heading"><div><div className="eyebrow">Your study toolkit</div><h2>One lecture.<br />A whole new way to learn.</h2><a href="#study-panel" className="button lime">Explore the study pack <ArrowRight size={15} /></a></div><p>Turn a lecture into a connected study experience. Find the big ideas, make them stick, and see what needs another look—all in one place.</p></div>
         <div ref={toolkitStage} onFocusCapture={event => { if (!(event.target as HTMLElement).closest(".toolkit-playback")) setToolkitPaused(true); }} onPointerDown={event => { if (!(event.target as HTMLElement).closest(".toolkit-playback")) setToolkitPaused(true); }} className={`toolkit-stage ${toolkitVisible ? 'toolkit-visible' : ''}`} data-preview={tab}>
           <div className="toolkit-ribbon" aria-hidden="true" />
-          <div className="toolkit-window">
+          <div className="toolkit-window" onPointerDown={() => setToolkitPaused(true)} onFocusCapture={() => setToolkitPaused(true)}>
             <aside className="toolkit-sidebar" aria-label="Sample course information"><span className="toolkit-logo"><Layers size={19} /> lexicon.</span><span className="toolkit-sidebar-label">Your study space</span><span><BookOpen size={14} /> My courses</span><span className="toolkit-sidebar-current"><Layers size={14} /> Study pack</span><span><Zap size={14} /> My progress</span><div className="toolkit-course"><span>Psy 101</span><strong>The science<br />of studying</strong><small>Sample lecture · Chapter 01</small></div></aside>
             <div className="demo-card"><div className="demo-card-header"><span><span className="tiny-logo">l.</span> The science of studying</span><span className="sample-badge">Sample pack</span></div><div id="study-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="demo-content toolkit-panel" key={previewReplay} tabIndex={0}>
           {tab === 'Notes' && <><div className="note-meta"><span>Psychology</span><span>01 / Study notes</span></div><h3>Learn it. Then make it last.</h3><p>Understanding something today is a great start. Remembering it tomorrow takes a little practice.</p><h4><span>01</span> Active recall</h4><p>Close your notes and try to explain the idea from memory. Then check your answer and fill in the gaps.</p><div className="note-exercise"><span>Try this</span><p>After a lecture, write down three things you remember before you open your notes.</p></div><h4><span>02</span> Spaced repetition</h4><p>Return to an idea across several study sessions, giving yourself time between each review.</p><div className="note-footer"><CheckCircle2 size={15} /> A little structure goes a long way.</div></>}

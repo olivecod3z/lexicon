@@ -1,15 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
+import usePageVisible from './use-page-visible';
 import { ArrowRight, ArrowUpRight, BookOpen, Chart, Check, ChevronRight, FileText, Flame, Home, Layers, Search, Settings, Sun, Upload, Zap, MousePointer2, Pause, Play } from './icons';
 
-export default function HeroDashboard() {
+export default memo(function HeroDashboard() {
+  const pageVisible = usePageVisible();
   const [phase, setPhase] = useState(0);
   const [paused, setPaused] = useState(false);
   const [visible, setVisible] = useState(false);
   const [cursorPosition, setCursorPosition] = useState({ left: 0, top: 0 });
   const [reduced, setReduced] = useState(true);
   const preview = useRef<HTMLDivElement>(null);
+  const playing = !paused && visible && pageVisible && !reduced;
+  const showingQuiz = phase >= 2 && phase <= 4 && !reduced;
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
     const update = () => setReduced(media.matches);
@@ -19,15 +23,16 @@ export default function HeroDashboard() {
     return () => { media.removeEventListener('change', update); observer.disconnect(); };
   }, []);
   useEffect(() => {
-    if (paused || !visible || reduced) return;
+    if (!playing) return;
     const timer = window.setTimeout(() => setPhase(value => (value + 1) % 6), [1100, 700, 1400, 650, 1700, 1300][phase]);
     return () => window.clearTimeout(timer);
-  }, [phase, paused, visible, reduced]);
+  }, [phase, playing]);
   useEffect(() => {
     const container = preview.current;
-    if (!container || reduced) return;
+    if (!container || reduced || !visible || !pageVisible) return;
+    let frame = 0;
     const measure = () => {
-      const target = container.querySelector<HTMLElement>(phase >= 2 && phase <= 4 ? '[data-demo-answer]' : '.dash-primary');
+      const target = container.querySelector<HTMLElement>(showingQuiz ? '[data-demo-answer]' : '.dash-primary');
       if (!target) return;
       let left = target.offsetWidth * .77;
       let top = target.offsetHeight * .6;
@@ -37,15 +42,18 @@ export default function HeroDashboard() {
         top += element.offsetTop;
         element = element.offsetParent as HTMLElement | null;
       }
-      setCursorPosition({ left, top });
+      setCursorPosition(current => current.left === left && current.top === top ? current : { left, top });
     };
-    measure();
-    const observer = new ResizeObserver(measure);
+    const scheduleMeasure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    scheduleMeasure();
+    const observer = new ResizeObserver(scheduleMeasure);
     observer.observe(container);
-    return () => observer.disconnect();
-  }, [phase, reduced]);
-  const showingQuiz = phase >= 2 && phase <= 4 && !reduced;
-  return <div role="group" ref={preview} className={`dashboard-peek refined-dashboard dash-demo phase-${reduced ? 0 : phase} ${paused ? 'demo-paused' : ''}`} aria-label="Sample dashboard: a student opens a practice question, selects the correct answer, and sees their progress update">
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [showingQuiz, reduced, visible, pageVisible]);
+  return <div role="group" ref={preview} className={`dashboard-peek refined-dashboard dash-demo phase-${reduced ? 0 : phase} ${!playing ? 'demo-paused' : ''}`} aria-label="Sample dashboard: a student opens a practice question, selects the correct answer, and sees their progress update">
     <aside className="dash-sidebar">
       <span className="dash-brand"><span><Layers size={17} /></span>lexicon.</span>
       <div className="dash-workspace"><span className="dash-avatar">Jo</span><div>Your workspace<small>Personal account</small></div><ChevronRight size={12} /></div>
@@ -90,7 +98,7 @@ export default function HeroDashboard() {
         {phase === 4 && <div className="demo-answer-feedback"><Check size={13} /><span>Exactly. Spaced practice builds lasting recall.</span></div>}
       </div>}
     </div>
-    {!reduced && <span className="dash-auto-cursor" style={cursorPosition} aria-hidden="true"><MousePointer2 size={23} /><i /></span>}
+    {!reduced && <span className="dash-auto-cursor" style={{ transform: `translate3d(${cursorPosition.left}px, ${cursorPosition.top}px, 0)` }} aria-hidden="true"><MousePointer2 size={23} /><i /></span>}
     {phase === 5 && !reduced && <div className="dash-demo-toast"><Check size={14} /> One idea clearer. Progress saved.</div>}
   </div>;
-}
+});
