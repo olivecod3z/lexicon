@@ -1,0 +1,11 @@
+.answer-review { margin: 34px 0 48px; }
+.answer-review > div { margin-bottom: 22px; }
+.answer-review h2 { margin: 4px 0 0; font-size: 28px; }
+.answer-review > h3 { margin: 30px 0 12px; font-size: 17px; }
+.answer-review article { border-left: 4px solid var(--border-strong); }
+.answer-review article.answer-correct { border-left-color: #6c9b43; }
+.answer-review article.answer-incorrect { border-left-color: #c97850; }
+.answer-review h4 { margin: 9px 0 14px; font-size: 17px; line-height: 1.4; }
+.answer-review article p { margin: 8px 0; color: var(--text-secondary); line-height: 1.5; }
+.answer-review article p b { color: var(--text-primary); }
+.answer-review .answer-explanation { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-primary); }

@@ -39,11 +39,55 @@ class PracticeResult(BaseModel):
     correct_gaps: int
     total_gradable: int = 8
     percentage: float
+    mcq_feedback: list["MCQFeedback"]
+    gap_feedback: list["GapFeedback"]
+
+
+class MCQFeedback(BaseModel):
+    """Corrective feedback revealed only after a practice submission."""
+
+    selected_option: str
+    correct_option: str
+    correct_answer: str
+    is_correct: bool
+    explanation: str
+
+
+class GapFeedback(BaseModel):
+    """Expected keyword feedback revealed only after a practice submission."""
+
+    submitted_answer: str
+    expected_answer: str
+    is_correct: bool
 
 def score_practice(practice: PracticeSet, submission: PracticeSubmission) -> PracticeResult:
-    correct_mcqs = sum(answer == question.correct_option for answer, question in zip(submission.mcq_answers, practice.mcqs))
-    correct_gaps = sum(answer.strip().casefold() == question.answer.strip().casefold() for answer, question in zip(submission.gap_answers, practice.fill_in_the_gaps))
-    return PracticeResult(correct_mcqs=correct_mcqs, correct_gaps=correct_gaps, percentage=round((correct_mcqs + correct_gaps) / 8 * 100, 2))
+    mcq_feedback = [
+        MCQFeedback(
+            selected_option=answer,
+            correct_option=question.correct_option,
+            correct_answer=next(option.text for option in question.options if option.label == question.correct_option),
+            is_correct=answer == question.correct_option,
+            explanation=question.explanation,
+        )
+        for answer, question in zip(submission.mcq_answers, practice.mcqs)
+    ]
+    gap_feedback = [
+        GapFeedback(
+            submitted_answer=answer,
+            expected_answer=question.answer,
+            is_correct=answer.strip().casefold() == question.answer.strip().casefold(),
+        )
+        for answer, question in zip(submission.gap_answers, practice.fill_in_the_gaps)
+    ]
+    correct_mcqs = sum(item.is_correct for item in mcq_feedback)
+    correct_gaps = sum(item.is_correct for item in gap_feedback)
+    return PracticeResult(
+        correct_mcqs=correct_mcqs,
+        correct_gaps=correct_gaps,
+        percentage=round((correct_mcqs + correct_gaps) / 8 * 100, 2),
+        mcq_feedback=mcq_feedback,
+        gap_feedback=gap_feedback,
+    )
 
 class PracticeGenerationError(RuntimeError): pass
 
