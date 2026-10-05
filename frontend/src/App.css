@@ -315,6 +315,9 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
 .recall-heading h1 { margin: 6px 0 9px; font-size: 33px; }
 .recall-heading p:not(.eyebrow) { margin: 0; color: var(--text-secondary); }
 .recall-heading>span { padding: 9px 13px; border-radius: 999px; background: var(--brand-primary-subtle); color: var(--forest); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.recall-summary { display: grid; gap: 7px; justify-items: end; }
+.recall-summary>span { padding: 9px 13px; border-radius: 999px; background: var(--brand-primary-subtle); color: var(--forest); font-size: 12px; font-weight: 700; white-space: nowrap; }
+.recall-summary small { color: var(--text-secondary); font-size: 11px; }
 .recall-card { padding: 30px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); }
 .recall-card>.eyebrow { margin-bottom: 15px; }
 .recall-ratings { margin-top: 24px; text-align: center; }
@@ -326,6 +329,9 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
 .recall-empty>svg { width: 35px; height: 35px; color: var(--forest); }
 .recall-empty h2 { margin: 14px 0 8px; }
 .recall-empty p:not(.eyebrow) { color: var(--text-secondary); line-height: 1.6; }
+.recall-complete-mark { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 16px; border-radius: 50%; background: var(--brand-primary); color: var(--forest); animation: recall-complete-pop .45s ease-out both; }
+.recall-complete-mark svg { width: 29px; height: 29px; stroke-width: 2.2; }
+@keyframes recall-complete-pop { from { transform: scale(.55); opacity: 0; } 70% { transform: scale(1.08); } to { transform: scale(1); opacity: 1; } }
 .resource-empty { display: flex; align-items: center; flex-direction: column; padding: 48px 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); text-align: center; }
 .resource-empty>svg { width: 30px; height: 30px; margin-bottom: 24px; color: var(--forest); }
 .resource-empty h2 { font-size: 23px; margin-bottom: 10px; }
@@ -365,6 +371,7 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
   .resume-strip { padding: 18px; }
   .result-row { flex-wrap: wrap; gap: 15px; }
   .result-row>div { flex-basis: 60%; }
+  .recall-summary { justify-items: start; }
   .card-controls .muted { text-align: center; font-size: 10px; }
 }
 

@@ -64,6 +64,14 @@ class StoredReviewCard:
 
 
 @dataclass(frozen=True)
+class StoredRecallProgress:
+    """A small, motivating summary of completed active-recall reviews."""
+
+    reviewed_today: int
+    current_streak: int
+
+
+@dataclass(frozen=True)
 class StoredQuiz:
     """A generated MCQ set saved with its answer key for later scoring."""
 
@@ -234,11 +242,36 @@ def review_flashcard(card_id: str, rating: str, now: datetime | None = None) -> 
             days = 1 if rating == "again" else 3 if rating == "hard" else 7 if card.interval_days < 7 else min(card.interval_days * 2, 30)
             updated = StoredReviewCard(**{**card.__dict__, "due_at": (current_time + timedelta(days=days)).isoformat(), "interval_days": days})
             connection.execute("UPDATE review_cards SET due_at = ?, interval_days = ? WHERE id = ?", (updated.due_at, updated.interval_days, card_id))
+            connection.execute(
+                "INSERT INTO review_events (id, card_id, reviewed_at) VALUES (?, ?, ?)",
+                (str(uuid4()), card_id, current_time.isoformat()),
+            )
     except MaterialNotFoundError:
         raise
     except sqlite3.Error as error:
         raise MaterialStorageError("Lexicon could not save this review. Please try again.") from error
     return updated
+
+
+def get_recall_progress(now: datetime | None = None) -> StoredRecallProgress:
+    """Count today's completed cards and the uninterrupted run of active days."""
+    today = (now or datetime.now(UTC)).date()
+    try:
+        with _database_connection() as connection:
+            rows = connection.execute(
+                "SELECT substr(reviewed_at, 1, 10) AS study_day FROM review_events ORDER BY study_day DESC"
+            ).fetchall()
+    except sqlite3.Error as error:
+        raise MaterialStorageError("Lexicon could not load your review progress. Please try again.") from error
+
+    study_days = {datetime.fromisoformat(row["study_day"]).date() for row in rows}
+    reviewed_today = sum(datetime.fromisoformat(row["study_day"]).date() == today for row in rows)
+    streak = 0
+    cursor = today
+    while cursor in study_days:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return StoredRecallProgress(reviewed_today=reviewed_today, current_streak=streak)
 
 
 def delete_material(material_id: str) -> None:
@@ -359,6 +392,16 @@ def _connect() -> sqlite3.Connection:
             topic TEXT NOT NULL,
             due_at TEXT NOT NULL,
             interval_days INTEGER NOT NULL
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS review_events (
+            id TEXT PRIMARY KEY,
+            card_id TEXT NOT NULL,
+            reviewed_at TEXT NOT NULL,
+            FOREIGN KEY (card_id) REFERENCES review_cards (id)
         )
         """
     )

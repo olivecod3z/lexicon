@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from google.cloud import firestore
 from google.api_core.exceptions import GoogleAPICallError
-from app.materials import CourseLimitError, MaterialNotFoundError, MaterialStorageError, StoredCourse, StoredMaterial, StoredQuiz, StoredAttempt, StoredReviewCard
+from app.materials import CourseLimitError, MaterialNotFoundError, MaterialStorageError, StoredCourse, StoredMaterial, StoredQuiz, StoredAttempt, StoredRecallProgress, StoredReviewCard
 from app.mcqs import MCQSet
 
 @lru_cache
@@ -140,10 +140,30 @@ def review_flashcard(owner_id, card_id, rating, now=None):
     if value is None or value.get("owner_id") != owner_id:
         raise MaterialNotFoundError(card_id)
     card = StoredReviewCard(**{key: value for key, value in value.items() if key != "owner_id"})
+    current_time = now or datetime.now(UTC)
     days = 1 if rating == "again" else 3 if rating == "hard" else 7 if card.interval_days < 7 else min(card.interval_days * 2, 30)
-    updated = StoredReviewCard(**{**card.__dict__, "due_at": ((now or datetime.now(UTC)) + timedelta(days=days)).isoformat(), "interval_days": days})
-    reference.update({"due_at": updated.due_at, "interval_days": updated.interval_days})
+    updated = StoredReviewCard(**{**card.__dict__, "due_at": (current_time + timedelta(days=days)).isoformat(), "interval_days": days})
+    batch = database().batch()
+    batch.update(reference, {"due_at": updated.due_at, "interval_days": updated.interval_days})
+    batch.set(database().collection("review_events").document(str(uuid4())), {"owner_id": owner_id, "card_id": card_id, "reviewed_at": current_time.isoformat()})
+    batch.commit()
     return updated
+
+
+@guarded
+def get_recall_progress(owner_id, now=None):
+    today = (now or datetime.now(UTC)).date()
+    events = database().collection("review_events").where("owner_id", "==", owner_id).limit(500).stream()
+    study_days = {datetime.fromisoformat(event.to_dict()["reviewed_at"]).date() for event in events}
+    # Count individual cards reviewed today; the date set above is only for streak calculation.
+    events = database().collection("review_events").where("owner_id", "==", owner_id).limit(500).stream()
+    reviewed_today = sum(datetime.fromisoformat(event.to_dict()["reviewed_at"]).date() == today for event in events)
+    streak = 0
+    cursor = today
+    while cursor in study_days:
+        streak += 1
+        cursor -= timedelta(days=1)
+    return StoredRecallProgress(reviewed_today=reviewed_today, current_streak=streak)
 
 @guarded
 def reserve_request(kind, limit):

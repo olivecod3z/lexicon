@@ -33,6 +33,7 @@ from app.materials import (
     save_flashcards,
     list_due_flashcards,
     review_flashcard,
+    get_recall_progress,
 )
 from app.quizzes import (
     QuizAttemptRequest,
@@ -55,7 +56,7 @@ HOSTED = bool(os.getenv("K_SERVICE"))
 if HOSTED:
     from app.cloud_store import (save_material, get_material, list_materials, delete_material,
         save_quiz, get_quiz, save_attempt, list_attempts, save_practice, get_practice,
-        save_course, list_courses, save_flashcards, list_due_flashcards, review_flashcard)
+        save_course, list_courses, save_flashcards, list_due_flashcards, review_flashcard, get_recall_progress)
     from app.hosted_access import enforce_preview_limits
     from fastapi.middleware.cors import CORSMiddleware
     app.middleware("http")(enforce_preview_limits)
@@ -115,6 +116,11 @@ class ReviewCardResponse(BaseModel):
 
 class ReviewSubmission(BaseModel):
     rating: Literal["again", "hard", "got_it"]
+
+
+class RecallProgressResponse(BaseModel):
+    reviewed_today: int
+    current_streak: int
 
 
 @app.get("/", include_in_schema=False)
@@ -252,6 +258,16 @@ def get_todays_recall(user: AuthenticatedUser = Depends(current_user)) -> list[R
     try:
         cards = list_due_flashcards(user.uid) if HOSTED else list_due_flashcards()
         return [review_card_response(card) for card in cards]
+    except MaterialStorageError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.get("/reviews/progress", response_model=RecallProgressResponse)
+def get_recall_progress_summary(user: AuthenticatedUser = Depends(current_user)) -> RecallProgressResponse:
+    """Return the student's completed recall count and current-day streak."""
+    try:
+        progress = get_recall_progress(user.uid) if HOSTED else get_recall_progress()
+        return RecallProgressResponse(**progress.__dict__)
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 

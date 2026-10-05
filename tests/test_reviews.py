@@ -8,6 +8,7 @@ from app.flashcards import Flashcard, FlashcardSet
 from app.main import app
 from app.materials import (
     MaterialNotFoundError,
+    get_recall_progress,
     list_due_flashcards,
     review_flashcard,
     save_material,
@@ -41,7 +42,30 @@ def test_review_ratings_schedule_cards_at_clear_intervals(monkeypatch) -> None:
     TEST_DATABASE_PATH.unlink(missing_ok=True)
 
 
+def test_recall_progress_counts_today_and_consecutive_days(monkeypatch) -> None:
+    TEST_DATABASE_PATH.unlink(missing_ok=True)
+    monkeypatch.setattr("app.materials.DATABASE_PATH", TEST_DATABASE_PATH)
+    now = datetime(2026, 10, 5, tzinfo=UTC)
+    card = Flashcard(card_type="question_answer", question="What is active recall?", answer="Retrieving an idea from memory.", topic="Learning")
+    cards = save_flashcards("material-1", "course-1", [card, card, card], now=now)
+
+    review_flashcard(cards[0].id, "got_it", now=now - timedelta(days=2))
+    review_flashcard(cards[1].id, "hard", now=now - timedelta(days=1))
+    review_flashcard(cards[2].id, "again", now=now)
+    progress = get_recall_progress(now=now)
+
+    assert progress.reviewed_today == 1
+    assert progress.current_streak == 3
+    TEST_DATABASE_PATH.unlink(missing_ok=True)
+
+
 def test_review_rejects_unknown_cards_and_ratings(monkeypatch) -> None:
+    TEST_DATABASE_PATH.unlink(missing_ok=True)
+    monkeypatch.setattr("app.materials.DATABASE_PATH", TEST_DATABASE_PATH)
+    with pytest.raises(ValueError):
+        review_flashcard("missing", "later")
+    with pytest.raises(MaterialNotFoundError):
+        review_flashcard("missing", "again")
     TEST_DATABASE_PATH.unlink(missing_ok=True)
 
 
@@ -69,13 +93,8 @@ def test_saved_flashcards_appear_in_today_recall_and_can_be_rated(monkeypatch) -
     assert reviewed.status_code == 200
     assert reviewed.json()["interval_days"] == 7
     assert len(client.get("/reviews/today").json()) == 4
-
-    TEST_DATABASE_PATH.unlink(missing_ok=True)
-    monkeypatch.setattr("app.materials.DATABASE_PATH", TEST_DATABASE_PATH)
-
-    with pytest.raises(ValueError):
-        review_flashcard("missing", "later")
-    with pytest.raises(MaterialNotFoundError):
-        review_flashcard("missing", "again")
+    progress = client.get("/reviews/progress")
+    assert progress.status_code == 200
+    assert progress.json() == {"reviewed_today": 1, "current_streak": 1}
 
     TEST_DATABASE_PATH.unlink(missing_ok=True)
