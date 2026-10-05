@@ -21,7 +21,7 @@ const colors = [
   { id: 'rose', label: 'Rose', value: '#f7dfe2', ink: '#7d424b' },
   { id: 'yellow', label: 'Sunshine', value: '#f5ecc5', ink: '#6d5b25' },
 ] as const;
-const steps = ['A little about you', 'Your study goals', 'Your first course'];
+const steps = ['A little about you', 'Your study goals', 'Your studies'];
 type GoalId = typeof goals[number]['id'];
 type Profile = {
   name: string;
@@ -209,7 +209,7 @@ export default function Onboarding() {
       return;
     }
     if (step === 2 && !profile.course.trim()) {
-      setErrors({ course: 'Add a course name, or choose Skip for now.' });
+      setErrors({ course: 'Add what you are studying, or choose Skip for now.' });
       document.getElementById('setup-course')?.focus();
       return;
     }
@@ -279,7 +279,7 @@ export default function Onboarding() {
                   <div><dt>Your studies</dt><dd>{profile.stage}{profile.institution.trim() && <small>{profile.institution.trim()}</small>}</dd></div>
                   <div><dt>Your focus</dt><dd>{goals.filter(goal => profile.goals.includes(goal.id)).map(goal => <span key={goal.id}>{goal.title}</span>)}</dd></div>
                   <div><dt>Your daily pace</dt><dd>{profile.minutes} minutes</dd></div>
-                  <div><dt>First course</dt><dd>{profile.course.trim() || 'Taking this step later'}{profile.courseCode.trim() && <small>{profile.courseCode.trim()}</small>}</dd></div>
+                  <div><dt>What you are studying</dt><dd>{profile.course.trim() || 'Taking this step later'}{profile.courseCode.trim() && <small>{profile.courseCode.trim()}</small>}</dd></div>
                 </dl>
                 <div className="setup-next">
                   <span className="setup-next-icon"><FileText size={23} /></span>
@@ -290,8 +290,8 @@ export default function Onboarding() {
                 <button className="setup-edit" type="button" onClick={() => { shouldFocus.current = true; setDirection('back'); setComplete(false); setStep(0); }}>Edit my setup</button>
               </> : <form noValidate onSubmit={handleSubmit}>
                 <div className="setup-step-meta"><span className="setup-eyebrow">Your study setup</span><span>Step {step + 1} of 3</span></div>
-                <h1 ref={heading} tabIndex={-1}>{['First, a little about you.', 'What brings you here?', 'Start with one course.'][step]}</h1>
-                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Give that lecture you\'ve been meaning to revisit a home.'][step]}</p>
+                <h1 ref={heading} tabIndex={-1}>{['First, a little about you.', 'What brings you here?', 'What are you studying?'][step]}</h1>
+                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Tell us the degree, programme or course you want Lexicon to support first.'][step]}</p>
 
                 {step === 0 && <div className="setup-fields">
                   <div className="setup-field">
@@ -330,17 +330,17 @@ export default function Onboarding() {
 
                 {step === 2 && <>
                   <div className="setup-fields">
-                    <div className="setup-field"><label htmlFor="setup-course">Course name</label><input id="setup-course" name="course" value={profile.course} onChange={event => update('course', event.target.value)} maxLength={100} placeholder="e.g. Introduction to Psychology" required aria-invalid={Boolean(errors.course)} aria-describedby={errors.course ? 'course-error' : undefined} />{errors.course && <p id="course-error" className="setup-field-error" role="alert">{errors.course}</p>}</div>
+                    <div className="setup-field"><label htmlFor="setup-course">Degree, programme or course</label><input id="setup-course" name="course" value={profile.course} onChange={event => update('course', event.target.value)} maxLength={100} placeholder="e.g. BSc Computer Science or PSY 101" required aria-invalid={Boolean(errors.course)} aria-describedby={errors.course ? 'course-error' : undefined} />{errors.course && <p id="course-error" className="setup-field-error" role="alert">{errors.course}</p>}</div>
                     <div className="setup-course-options">
-                      <div className="setup-field"><label htmlFor="setup-course-code">Course code <span>Optional</span></label><input id="setup-course-code" name="course-code" value={profile.courseCode} onChange={event => update('courseCode', event.target.value)} maxLength={16} placeholder="e.g. PSY 101" /></div>
-                      <fieldset className="setup-colors"><legend>Course color</legend><div>{colors.map(color => <label key={color.id} title={color.label} style={{ background: color.value, color: color.ink }} className={profile.color === color.id ? 'is-selected' : ''}>
+                      <div className="setup-field"><label htmlFor="setup-course-code">Programme or course code <span>Optional</span></label><input id="setup-course-code" name="course-code" value={profile.courseCode} onChange={event => update('courseCode', event.target.value)} maxLength={16} placeholder="e.g. CSC 201" /></div>
+                      <fieldset className="setup-colors"><legend>Study space color</legend><div>{colors.map(color => <label key={color.id} title={color.label} style={{ background: color.value, color: color.ink }} className={profile.color === color.id ? 'is-selected' : ''}>
                         <input type="radio" name="course-color" value={color.id} checked={profile.color === color.id} onChange={() => update('color', color.id)} aria-label={color.label} />{profile.color === color.id && <Check size={18} />}
                       </label>)}</div></fieldset>
                     </div>
                   </div>
                   <div className="setup-course-preview" style={{ borderTopColor: selectedColor.value }}>
                     <span className="setup-course-symbol" style={{ background: selectedColor.value, color: selectedColor.ink }}><BookOpen size={25} /></span>
-                    <span className="setup-preview-code">{profile.courseCode.trim() || 'Your first course'}</span>
+                    <span className="setup-preview-code">{profile.courseCode.trim() || 'Your study space'}</span>
                     <h2>{profile.course.trim() || 'A new chapter starts here.'}</h2>
                     <div><span><FileText size={15} /> 0 study packs</span><span>Ready for a fresh start</span></div>
                   </div>
@@ -348,7 +348,7 @@ export default function Onboarding() {
 
                 <div className="setup-actions">
                   {step > 0 ? <button type="button" className="setup-back" onClick={() => goTo(step - 1)}><ChevronLeft size={17} /> Back</button> : <span className="setup-action-note"><Zap size={15} /> A couple of minutes, all yours.</span>}
-                  <button type="submit" className="setup-primary" disabled={isFinishing}>{step === 2 && isFinishing ? 'Saving your course…' : step === 2 ? 'Finish setup' : 'Continue'}<ArrowRight size={18} /></button>
+                  <button type="submit" className="setup-primary" disabled={isFinishing}>{step === 2 && isFinishing ? 'Saving your study space…' : step === 2 ? 'Finish setup' : 'Continue'}<ArrowRight size={18} /></button>
                 </div>
                 {step === 2 && <>{finishError && <p className="setup-field-error" role="alert">{finishError}</p>}<button type="button" className="setup-skip-course" disabled={isFinishing} onClick={() => void finish(true)}>Skip for now</button></>}
               </form>}
