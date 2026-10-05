@@ -12,7 +12,7 @@ def test_library_returns_newest_first_without_lecture_text(monkeypatch, tmp_path
     assert response.status_code == 200
     rows = response.json()
     assert [row["id"] for row in rows] == [second.id, first.id]
-    assert all(set(row) == {"id", "filename", "unit_count", "character_count", "created_at"} for row in rows)
+    assert all(set(row) == {"id", "filename", "unit_count", "character_count", "created_at", "course_id"} for row in rows)
     assert "Private lecture text" not in response.text
 
 

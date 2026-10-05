@@ -20,6 +20,10 @@ class MaterialStorageError(RuntimeError):
     """Raised when Lexicon cannot read or write its local material store."""
 
 
+class CourseLimitError(RuntimeError):
+    """Raised when a student reaches the number of courses their plan allows."""
+
+
 @dataclass(frozen=True)
 class StoredMaterial:
     """The material metadata and extracted text needed by later features."""
@@ -29,6 +33,18 @@ class StoredMaterial:
     source_text: str
     unit_count: int
     character_count: int
+    created_at: str
+    course_id: str | None = None
+
+
+@dataclass(frozen=True)
+class StoredCourse:
+    """A student's named study space for related lectures and future reviews."""
+
+    id: str
+    name: str
+    code: str
+    color: str
     created_at: str
 
 
@@ -50,7 +66,7 @@ class StoredAttempt:
     created_at: str
 
 
-def save_material(filename: str, source_text: str, unit_count: int) -> StoredMaterial:
+def save_material(filename: str, source_text: str, unit_count: int, course_id: str | None = None) -> StoredMaterial:
     """Store extracted text once and return the identifier used by later requests."""
     material = StoredMaterial(
         id=str(uuid4()),
@@ -59,13 +75,14 @@ def save_material(filename: str, source_text: str, unit_count: int) -> StoredMat
         unit_count=unit_count,
         character_count=len(source_text),
         created_at=datetime.now(UTC).isoformat(),
+        course_id=course_id,
     )
     try:
         with _database_connection() as connection:
             connection.execute(
                 """
-                INSERT INTO materials (id, filename, source_text, unit_count, character_count, created_at)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO materials (id, filename, source_text, unit_count, character_count, created_at, course_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     material.id,
@@ -74,6 +91,7 @@ def save_material(filename: str, source_text: str, unit_count: int) -> StoredMat
                     material.unit_count,
                     material.character_count,
                     material.created_at,
+                    material.course_id,
                 ),
             )
     except sqlite3.Error as error:
@@ -88,7 +106,7 @@ def get_material(material_id: str) -> StoredMaterial:
         with _database_connection() as connection:
             row = connection.execute(
                 """
-                SELECT id, filename, source_text, unit_count, character_count, created_at
+                SELECT id, filename, source_text, unit_count, character_count, created_at, course_id
                 FROM materials
                 WHERE id = ?
                 """,
@@ -108,12 +126,41 @@ def list_materials() -> list[dict]:
     try:
         with _database_connection() as connection:
             rows = connection.execute(
-                "SELECT id, filename, unit_count, character_count, created_at "
+                "SELECT id, filename, unit_count, character_count, created_at, course_id "
                 "FROM materials ORDER BY created_at DESC, id DESC"
             ).fetchall()
     except sqlite3.Error as error:
         raise MaterialStorageError("Lexicon could not load your saved materials. Please try again.") from error
     return [dict(row) for row in rows]
+
+
+def save_course(name: str, code: str = "", color: str = "green") -> StoredCourse:
+    """Create the first local course used to group related lecture materials."""
+    course = StoredCourse(str(uuid4()), name, code, color, datetime.now(UTC).isoformat())
+    try:
+        with _database_connection() as connection:
+            existing = connection.execute("SELECT COUNT(*) FROM courses").fetchone()[0]
+            if existing >= 1:
+                raise CourseLimitError("The free plan includes one course. More courses will be available with a paid plan.")
+            connection.execute(
+                "INSERT INTO courses (id, name, code, color, created_at) VALUES (?, ?, ?, ?, ?)",
+                (course.id, course.name, course.code, course.color, course.created_at),
+            )
+    except CourseLimitError:
+        raise
+    except sqlite3.Error as error:
+        raise MaterialStorageError("Lexicon could not save this course locally.") from error
+    return course
+
+
+def list_courses() -> list[StoredCourse]:
+    """Return the local student's courses, newest first."""
+    try:
+        with _database_connection() as connection:
+            rows = connection.execute("SELECT id, name, code, color, created_at FROM courses ORDER BY created_at DESC").fetchall()
+    except sqlite3.Error as error:
+        raise MaterialStorageError("Lexicon could not load your courses. Please try again.") from error
+    return [StoredCourse(**dict(row)) for row in rows]
 
 
 def delete_material(material_id: str) -> None:
@@ -217,6 +264,21 @@ def _connect() -> sqlite3.Connection:
             source_text TEXT NOT NULL,
             unit_count INTEGER NOT NULL,
             character_count INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            course_id TEXT
+        )
+        """
+    )
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(materials)").fetchall()}
+    if "course_id" not in columns:
+        connection.execute("ALTER TABLE materials ADD COLUMN course_id TEXT")
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS courses (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            code TEXT NOT NULL,
+            color TEXT NOT NULL,
             created_at TEXT NOT NULL
         )
         """

@@ -303,6 +303,13 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
 .compact-upload,.library-spacing { margin-top: 30px; }
 .library-error { color: var(--danger); font-size: 13px; padding: 15px 0; }
 .library-error p { margin-bottom: 5px; }
+.course-setup { max-width: 620px; padding: 32px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); }
+.course-setup h2 { margin: 8px 0 10px; font-size: 26px; }
+.course-setup>p:not(.eyebrow) { margin: 0 0 24px; color: var(--text-secondary); line-height: 1.6; }
+.course-setup form { display: grid; gap: 16px; }
+.course-setup label { display: grid; gap: 7px; font-size: 13px; font-weight: 700; color: var(--forest); }
+.course-setup input { width: 100%; padding: 13px 14px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--surface); color: var(--text-primary); font: inherit; }
+.course-setup .button { justify-self: start; margin-top: 4px; }
 .resource-empty { display: flex; align-items: center; flex-direction: column; padding: 48px 24px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); text-align: center; }
 .resource-empty>svg { width: 30px; height: 30px; margin-bottom: 24px; color: var(--forest); }
 .resource-empty h2 { font-size: 23px; margin-bottom: 10px; }

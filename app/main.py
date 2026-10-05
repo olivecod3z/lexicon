@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 
@@ -16,6 +16,8 @@ from app.materials import (
     MaterialNotFoundError,
     MaterialStorageError,
     StoredMaterial,
+    StoredCourse,
+    CourseLimitError,
     delete_material,
     get_material,
     get_quiz,
@@ -24,6 +26,8 @@ from app.materials import (
     save_material,
     save_attempt,
     save_quiz,
+    save_course,
+    list_courses,
 )
 from app.quizzes import (
     QuizAttemptRequest,
@@ -45,7 +49,8 @@ practice_sessions: dict[str, PracticeSet] = {}
 HOSTED = bool(os.getenv("K_SERVICE"))
 if HOSTED:
     from app.cloud_store import (save_material, get_material, list_materials, delete_material,
-        save_quiz, get_quiz, save_attempt, list_attempts, save_practice, get_practice)
+        save_quiz, get_quiz, save_attempt, list_attempts, save_practice, get_practice,
+        save_course, list_courses)
     from app.hosted_access import enforce_preview_limits
     from fastapi.middleware.cors import CORSMiddleware
     app.middleware("http")(enforce_preview_limits)
@@ -71,6 +76,23 @@ class MaterialResponse(BaseModel):
     filename: str
     unit_count: int
     character_count: int
+    created_at: str
+    course_id: str | None = None
+
+
+class CourseCreate(BaseModel):
+    """The small amount of information needed to name a study space."""
+
+    name: str
+    code: str = ""
+    color: str = "green"
+
+
+class CourseResponse(BaseModel):
+    id: str
+    name: str
+    code: str
+    color: str
     created_at: str
 
 
@@ -111,7 +133,24 @@ def material_response(material: StoredMaterial) -> MaterialResponse:
         unit_count=material.unit_count,
         character_count=material.character_count,
         created_at=material.created_at,
+        course_id=material.course_id,
     )
+
+
+def course_response(course: StoredCourse) -> CourseResponse:
+    return CourseResponse(**course.__dict__)
+
+
+def validate_course(data: CourseCreate) -> CourseCreate:
+    name = data.name.strip()
+    code = data.code.strip()
+    if not name or len(name) > 100:
+        raise HTTPException(status_code=422, detail="Course names must be between 1 and 100 characters.")
+    if len(code) > 16:
+        raise HTTPException(status_code=422, detail="Course codes must be 16 characters or fewer.")
+    if data.color not in {"green", "blue", "rose", "yellow"}:
+        raise HTTPException(status_code=422, detail="Choose one of Lexicon's course colours.")
+    return CourseCreate(name=name, code=code, color=data.color)
 
 
 def load_material_or_404(owner_id: str, material_id: str) -> StoredMaterial:
@@ -135,16 +174,39 @@ def load_quiz_or_404(owner_id: str, quiz_id: str):
 
 
 @app.post("/materials", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED)
-async def upload_material(file: UploadFile = File(...), user: AuthenticatedUser = Depends(current_user)) -> MaterialResponse:
+async def upload_material(file: UploadFile = File(...), course_id: str | None = Form(None), user: AuthenticatedUser = Depends(current_user)) -> MaterialResponse:
     """Extract and save one material so later study features can reuse it."""
     filename, file_bytes = await read_supported_upload(file)
 
     try:
         source_text, unit_count = extract_text(filename, file_bytes)
-        saved = save_material(user.uid, filename, source_text, unit_count) if HOSTED else save_material(filename, source_text, unit_count)
+        saved = save_material(user.uid, filename, source_text, unit_count, course_id) if HOSTED else save_material(filename, source_text, unit_count, course_id)
         return material_response(saved)
     except DocumentExtractionError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
+    except MaterialStorageError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.get("/courses", response_model=list[CourseResponse])
+def get_courses(user: AuthenticatedUser = Depends(current_user)) -> list[CourseResponse]:
+    """List the signed-in student's course workspaces."""
+    try:
+        courses = list_courses(user.uid) if HOSTED else list_courses()
+        return [course_response(course) for course in courses]
+    except MaterialStorageError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.post("/courses", response_model=CourseResponse, status_code=status.HTTP_201_CREATED)
+def create_course(data: CourseCreate, user: AuthenticatedUser = Depends(current_user)) -> CourseResponse:
+    """Create the one full-featured course included in the free plan."""
+    data = validate_course(data)
+    try:
+        course = save_course(user.uid, data.name, data.code, data.color) if HOSTED else save_course(data.name, data.code, data.color)
+        return course_response(course)
+    except CourseLimitError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 

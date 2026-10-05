@@ -6,7 +6,7 @@ from uuid import uuid4
 
 from google.cloud import firestore
 from google.api_core.exceptions import GoogleAPICallError
-from app.materials import MaterialNotFoundError, MaterialStorageError, StoredMaterial, StoredQuiz, StoredAttempt
+from app.materials import CourseLimitError, MaterialNotFoundError, MaterialStorageError, StoredCourse, StoredMaterial, StoredQuiz, StoredAttempt
 from app.mcqs import MCQSet
 
 @lru_cache
@@ -23,10 +23,36 @@ def guarded(function):
     return run
 
 @guarded
-def save_material(owner_id, filename, source_text, unit_count):
+def save_course(owner_id, name, code="", color="green"):
+    existing = list(database().collection("courses").where("owner_id", "==", owner_id).limit(2).stream())
+    if existing:
+        raise CourseLimitError("The free plan includes one course. More courses will be available with a paid plan.")
+    course = StoredCourse(str(uuid4()), name, code, color, datetime.now(UTC).isoformat())
+    database().collection("courses").document(course.id).set({**asdict(course), "owner_id": owner_id})
+    return course
+
+
+@guarded
+def list_courses(owner_id):
+    return [StoredCourse(**{key: value for key, value in doc.to_dict().items() if key != "owner_id"}) for doc in database().collection("courses").where("owner_id", "==", owner_id).order_by("created_at", direction=firestore.Query.DESCENDING).limit(10).stream()]
+
+
+@guarded
+def get_course(owner_id, course_id):
+    value = database().collection("courses").document(course_id).get().to_dict()
+    if value is None or value.get("owner_id") != owner_id:
+        raise MaterialNotFoundError(course_id)
+    return StoredCourse(**{key: value for key, value in value.items() if key != "owner_id"})
+
+
+@guarded
+def save_material(owner_id, filename, source_text, unit_count, course_id=None):
     if len(source_text) > 60000:
         raise MaterialStorageError("For this preview, split lectures into files with at most 60,000 readable characters.")
-    material = StoredMaterial(str(uuid4()), filename, source_text, unit_count, len(source_text), datetime.now(UTC).isoformat())
+    if not course_id:
+        raise MaterialStorageError("Choose a course before uploading a lecture.")
+    get_course(owner_id, course_id)
+    material = StoredMaterial(str(uuid4()), filename, source_text, unit_count, len(source_text), datetime.now(UTC).isoformat(), course_id)
     database().collection("materials").document(material.id).set({**asdict(material), "owner_id": owner_id})
     return material
 
@@ -40,7 +66,7 @@ def get_material(owner_id, material_id):
 
 @guarded
 def list_materials(owner_id):
-    fields = ["id", "filename", "unit_count", "character_count", "created_at"]
+    fields = ["id", "filename", "unit_count", "character_count", "created_at", "course_id"]
     return [doc.to_dict() for doc in database().collection("materials").where("owner_id", "==", owner_id).select(fields).order_by("created_at", direction=firestore.Query.DESCENDING).limit(100).stream()]
 
 @guarded

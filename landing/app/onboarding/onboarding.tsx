@@ -7,6 +7,7 @@ import { auth } from '../firebase';
 import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronLeft, FileText, Layers, Sun, Zap } from '../icons';
 
 const STORAGE_KEY = 'lexicon.onboarding.v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://lexicon-api-600311691439.europe-west1.run.app';
 const stages = ['University', 'Secondary school', 'Postgraduate', 'Independent learning'] as const;
 const goals = [
   { id: 'understand', title: 'Understand my lectures', detail: 'Connect the dots in my course material.', icon: BookOpen, color: 'mint' },
@@ -57,6 +58,25 @@ function parseSetup(raw: string | null): Setup | null {
   }
 }
 
+async function ensureFirstCourse(profile: Profile) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('Your sign-in session has expired. Please sign in again.');
+  const headers = { Authorization: `Bearer ${await user.getIdToken()}` };
+  const existing = await fetch(`${API_BASE_URL}/courses`, { headers });
+  if (!existing.ok) throw new Error('Lexicon could not open your study space. Please try again.');
+  const courses = await existing.json();
+  if (courses.length) return;
+  const response = await fetch(`${API_BASE_URL}/courses`, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: profile.course.trim(), code: profile.courseCode.trim(), color: profile.color }),
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new Error(typeof data?.detail === 'string' ? data.detail : 'Lexicon could not save your first course. Please try again.');
+  }
+}
+
 export default function Onboarding() {
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [profile, setProfile] = useState<Profile>(initialProfile);
@@ -64,6 +84,8 @@ export default function Onboarding() {
   const [complete, setComplete] = useState(false);
   const [ready, setReady] = useState(false);
   const [saveError, setSaveError] = useState(false);
+  const [finishError, setFinishError] = useState('');
+  const [isFinishing, setIsFinishing] = useState(false);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [direction, setDirection] = useState('forward');
   const heading = useRef<HTMLHeadingElement>(null);
@@ -151,17 +173,27 @@ export default function Onboarding() {
     setStep(next);
   }
 
-  function finish(skipCourse = false) {
+  async function finish(skipCourse = false) {
+    setIsFinishing(true);
+    setFinishError('');
     setDirection('forward');
-    setProfile(current => ({
-      ...current,
-      name: current.name.trim(), institution: current.institution.trim(),
-      course: skipCourse ? '' : current.course.trim(),
-      courseCode: skipCourse ? '' : current.courseCode.trim(),
-    }));
-    setErrors({});
-    shouldFocus.current = true;
-    setComplete(true);
+    const cleanedProfile = {
+      ...profile,
+      name: profile.name.trim(), institution: profile.institution.trim(),
+      course: skipCourse ? '' : profile.course.trim(),
+      courseCode: skipCourse ? '' : profile.courseCode.trim(),
+    };
+    try {
+      if (!skipCourse) await ensureFirstCourse(cleanedProfile);
+      setProfile(cleanedProfile);
+      setErrors({});
+      shouldFocus.current = true;
+      setComplete(true);
+    } catch (error) {
+      setFinishError(error instanceof Error ? error.message : 'Lexicon could not save your setup. Please try again.');
+    } finally {
+      setIsFinishing(false);
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -182,7 +214,7 @@ export default function Onboarding() {
       return;
     }
     if (step < 2) goTo(step + 1);
-    else finish();
+    else void finish();
   }
 
   if (authenticated !== true) return <main className="onboarding-shell"><p className="setup-loading" role="status">Opening your study setup…</p></main>;
@@ -316,12 +348,12 @@ export default function Onboarding() {
 
                 <div className="setup-actions">
                   {step > 0 ? <button type="button" className="setup-back" onClick={() => goTo(step - 1)}><ChevronLeft size={17} /> Back</button> : <span className="setup-action-note"><Zap size={15} /> A couple of minutes, all yours.</span>}
-                  <button type="submit" className="setup-primary">{step === 2 ? 'Finish setup' : 'Continue'}<ArrowRight size={18} /></button>
+                  <button type="submit" className="setup-primary" disabled={isFinishing}>{step === 2 && isFinishing ? 'Saving your course…' : step === 2 ? 'Finish setup' : 'Continue'}<ArrowRight size={18} /></button>
                 </div>
-                {step === 2 && <button type="button" className="setup-skip-course" onClick={() => finish(true)}>Skip for now</button>}
+                {step === 2 && <>{finishError && <p className="setup-field-error" role="alert">{finishError}</p>}<button type="button" className="setup-skip-course" disabled={isFinishing} onClick={() => void finish(true)}>Skip for now</button></>}
               </form>}
               </div>
-              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your setup could not be saved in this browser. You can continue, but keep this tab open.' : 'Your preferences stay in this browser. No account created yet.'}</p>
+              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your setup could not be saved in this browser. You can continue, but keep this tab open.' : 'Your preferences stay in this browser and your first course is saved to your private Lexicon account.'}</p>
             </div>
           )}
         </main>
