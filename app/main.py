@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import Literal
 from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
@@ -17,6 +18,7 @@ from app.materials import (
     MaterialStorageError,
     StoredMaterial,
     StoredCourse,
+    StoredReviewCard,
     CourseLimitError,
     delete_material,
     get_material,
@@ -28,6 +30,9 @@ from app.materials import (
     save_quiz,
     save_course,
     list_courses,
+    save_flashcards,
+    list_due_flashcards,
+    review_flashcard,
 )
 from app.quizzes import (
     QuizAttemptRequest,
@@ -50,7 +55,7 @@ HOSTED = bool(os.getenv("K_SERVICE"))
 if HOSTED:
     from app.cloud_store import (save_material, get_material, list_materials, delete_material,
         save_quiz, get_quiz, save_attempt, list_attempts, save_practice, get_practice,
-        save_course, list_courses)
+        save_course, list_courses, save_flashcards, list_due_flashcards, review_flashcard)
     from app.hosted_access import enforce_preview_limits
     from fastapi.middleware.cors import CORSMiddleware
     app.middleware("http")(enforce_preview_limits)
@@ -96,6 +101,22 @@ class CourseResponse(BaseModel):
     created_at: str
 
 
+class ReviewCardResponse(BaseModel):
+    id: str
+    material_id: str
+    course_id: str | None
+    card_type: str
+    question: str
+    answer: str
+    topic: str
+    due_at: str
+    interval_days: int
+
+
+class ReviewSubmission(BaseModel):
+    rating: Literal["again", "hard", "got_it"]
+
+
 @app.get("/", include_in_schema=False)
 def root() -> RedirectResponse:
     """Send local visitors to the interactive API documentation."""
@@ -139,6 +160,10 @@ def material_response(material: StoredMaterial) -> MaterialResponse:
 
 def course_response(course: StoredCourse) -> CourseResponse:
     return CourseResponse(**course.__dict__)
+
+
+def review_card_response(card: StoredReviewCard) -> ReviewCardResponse:
+    return ReviewCardResponse(**card.__dict__)
 
 
 def validate_course(data: CourseCreate) -> CourseCreate:
@@ -219,6 +244,28 @@ def get_material_library(user: AuthenticatedUser = Depends(current_user)) -> lis
         return [MaterialResponse(**item) for item in items]
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.get("/reviews/today", response_model=list[ReviewCardResponse])
+def get_todays_recall(user: AuthenticatedUser = Depends(current_user)) -> list[ReviewCardResponse]:
+    """Return this student's saved flashcards that are ready for recall today."""
+    try:
+        cards = list_due_flashcards(user.uid) if HOSTED else list_due_flashcards()
+        return [review_card_response(card) for card in cards]
+    except MaterialStorageError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.post("/reviews/{card_id}", response_model=ReviewCardResponse)
+def schedule_review(card_id: str, submission: ReviewSubmission, user: AuthenticatedUser = Depends(current_user)) -> ReviewCardResponse:
+    """Save the student's recall rating and schedule the next review."""
+    try:
+        card = review_flashcard(user.uid, card_id, submission.rating) if HOSTED else review_flashcard(card_id, submission.rating)
+        return review_card_response(card)
+    except MaterialNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Review card not found.") from error
+    except (MaterialStorageError, ValueError) as error:
+        raise HTTPException(status_code=503 if isinstance(error, MaterialStorageError) else 422, detail=str(error)) from error
 
 
 @app.get("/materials/{material_id}", response_model=MaterialResponse)
@@ -320,8 +367,15 @@ def create_flashcards_from_saved_material(material_id: str, user: AuthenticatedU
     """Generate flashcards from material saved by the upload-once workflow."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        return generate_flashcards(material.source_text)
+        flashcards = generate_flashcards(material.source_text)
+        if HOSTED:
+            save_flashcards(user.uid, material.id, material.course_id, flashcards.flashcards)
+        else:
+            save_flashcards(material.id, material.course_id, flashcards.flashcards)
+        return flashcards
     except (FlashcardGenerationError, TextChunkingError) as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 

@@ -3,7 +3,7 @@
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -46,6 +46,21 @@ class StoredCourse:
     code: str
     color: str
     created_at: str
+
+
+@dataclass(frozen=True)
+class StoredReviewCard:
+    """One saved flashcard plus the next time it should be reviewed."""
+
+    id: str
+    material_id: str
+    course_id: str | None
+    card_type: str
+    question: str
+    answer: str
+    topic: str
+    due_at: str
+    interval_days: int
 
 
 @dataclass(frozen=True)
@@ -163,6 +178,69 @@ def list_courses() -> list[StoredCourse]:
     return [StoredCourse(**dict(row)) for row in rows]
 
 
+def save_flashcards(material_id: str, course_id: str | None, flashcards, now: datetime | None = None) -> list[StoredReviewCard]:
+    """Save generated cards as immediately due, ready for a first recall session."""
+    due_at = (now or datetime.now(UTC)).isoformat()
+    cards = [
+        StoredReviewCard(
+            id=str(uuid4()), material_id=material_id, course_id=course_id,
+            card_type=card.card_type, question=card.question, answer=card.answer,
+            topic=card.topic, due_at=due_at, interval_days=0,
+        )
+        for card in flashcards
+    ]
+    try:
+        with _database_connection() as connection:
+            connection.executemany(
+                """INSERT INTO review_cards
+                (id, material_id, course_id, card_type, question, answer, topic, due_at, interval_days)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                [(card.id, card.material_id, card.course_id, card.card_type, card.question, card.answer, card.topic, card.due_at, card.interval_days) for card in cards],
+            )
+    except sqlite3.Error as error:
+        raise MaterialStorageError("Lexicon could not save these flashcards for review.") from error
+    return cards
+
+
+def list_due_flashcards(now: datetime | None = None) -> list[StoredReviewCard]:
+    """Return cards due now, oldest first, without exposing future reviews."""
+    due_at = (now or datetime.now(UTC)).isoformat()
+    try:
+        with _database_connection() as connection:
+            rows = connection.execute(
+                """SELECT id, material_id, course_id, card_type, question, answer, topic, due_at, interval_days
+                FROM review_cards WHERE due_at <= ? ORDER BY due_at ASC, id ASC LIMIT 50""",
+                (due_at,),
+            ).fetchall()
+    except sqlite3.Error as error:
+        raise MaterialStorageError("Lexicon could not load today's recall. Please try again.") from error
+    return [StoredReviewCard(**dict(row)) for row in rows]
+
+
+def review_flashcard(card_id: str, rating: str, now: datetime | None = None) -> StoredReviewCard:
+    """Schedule one reviewed card using a small, explainable spacing rule."""
+    if rating not in {"again", "hard", "got_it"}:
+        raise ValueError("Choose Again, Hard, or Got it.")
+    current_time = now or datetime.now(UTC)
+    try:
+        with _database_connection() as connection:
+            row = connection.execute(
+                "SELECT id, material_id, course_id, card_type, question, answer, topic, due_at, interval_days FROM review_cards WHERE id = ?",
+                (card_id,),
+            ).fetchone()
+            if row is None:
+                raise MaterialNotFoundError(card_id)
+            card = StoredReviewCard(**dict(row))
+            days = 1 if rating == "again" else 3 if rating == "hard" else 7 if card.interval_days < 7 else min(card.interval_days * 2, 30)
+            updated = StoredReviewCard(**{**card.__dict__, "due_at": (current_time + timedelta(days=days)).isoformat(), "interval_days": days})
+            connection.execute("UPDATE review_cards SET due_at = ?, interval_days = ? WHERE id = ?", (updated.due_at, updated.interval_days, card_id))
+    except MaterialNotFoundError:
+        raise
+    except sqlite3.Error as error:
+        raise MaterialStorageError("Lexicon could not save this review. Please try again.") from error
+    return updated
+
+
 def delete_material(material_id: str) -> None:
     """Permanently remove one locally stored material and its extracted text."""
     try:
@@ -266,6 +344,21 @@ def _connect() -> sqlite3.Connection:
             character_count INTEGER NOT NULL,
             created_at TEXT NOT NULL,
             course_id TEXT
+        )
+        """
+    )
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS review_cards (
+            id TEXT PRIMARY KEY,
+            material_id TEXT NOT NULL,
+            course_id TEXT,
+            card_type TEXT NOT NULL,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            topic TEXT NOT NULL,
+            due_at TEXT NOT NULL,
+            interval_days INTEGER NOT NULL
         )
         """
     )

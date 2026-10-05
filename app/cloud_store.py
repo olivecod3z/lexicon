@@ -1,12 +1,12 @@
 """Durable storage for the private hosted workspace (local SQLite is unchanged)."""
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache, wraps
 from uuid import uuid4
 
 from google.cloud import firestore
 from google.api_core.exceptions import GoogleAPICallError
-from app.materials import CourseLimitError, MaterialNotFoundError, MaterialStorageError, StoredCourse, StoredMaterial, StoredQuiz, StoredAttempt
+from app.materials import CourseLimitError, MaterialNotFoundError, MaterialStorageError, StoredCourse, StoredMaterial, StoredQuiz, StoredAttempt, StoredReviewCard
 from app.mcqs import MCQSet
 
 @lru_cache
@@ -108,6 +108,42 @@ def get_practice(owner_id, practice_id):
     from app.practice import PracticeSet
     value = database().collection("practice_sessions").document(practice_id).get().to_dict()
     return PracticeSet.model_validate_json(value["practice"]) if value and value.get("owner_id") == owner_id else None
+
+
+@guarded
+def save_flashcards(owner_id, material_id, course_id, flashcards, now=None):
+    due_at = (now or datetime.now(UTC)).isoformat()
+    cards = [StoredReviewCard(str(uuid4()), material_id, course_id, card.card_type, card.question, card.answer, card.topic, due_at, 0) for card in flashcards]
+    batch = database().batch()
+    for card in cards:
+        batch.set(database().collection("review_cards").document(card.id), {**asdict(card), "owner_id": owner_id})
+    batch.commit()
+    return cards
+
+
+@guarded
+def list_due_flashcards(owner_id, now=None):
+    cutoff = (now or datetime.now(UTC)).isoformat()
+    cards = [
+        StoredReviewCard(**{key: value for key, value in document.to_dict().items() if key != "owner_id"})
+        for document in database().collection("review_cards").where("owner_id", "==", owner_id).limit(100).stream()
+    ]
+    return sorted((card for card in cards if card.due_at <= cutoff), key=lambda card: (card.due_at, card.id))[:50]
+
+
+@guarded
+def review_flashcard(owner_id, card_id, rating, now=None):
+    if rating not in {"again", "hard", "got_it"}:
+        raise ValueError("Choose Again, Hard, or Got it.")
+    reference = database().collection("review_cards").document(card_id)
+    value = reference.get().to_dict()
+    if value is None or value.get("owner_id") != owner_id:
+        raise MaterialNotFoundError(card_id)
+    card = StoredReviewCard(**{key: value for key, value in value.items() if key != "owner_id"})
+    days = 1 if rating == "again" else 3 if rating == "hard" else 7 if card.interval_days < 7 else min(card.interval_days * 2, 30)
+    updated = StoredReviewCard(**{**card.__dict__, "due_at": ((now or datetime.now(UTC)) + timedelta(days=days)).isoformat(), "interval_days": days})
+    reference.update({"due_at": updated.due_at, "interval_days": updated.interval_days})
+    return updated
 
 @guarded
 def reserve_request(kind, limit):
