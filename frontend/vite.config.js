@@ -4,6 +4,7 @@ import { defineConfig } from 'vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: process.env.VITE_BASE_PATH || '/',
+  // Firebase serves this Vite app below /dashboard rather than at the site root.
+  base: process.env.VITE_BASE_PATH || '/dashboard/',
   server: { proxy: { '/materials': 'http://127.0.0.1:8000', '/quizzes': 'http://127.0.0.1:8000', '/practice-sessions': 'http://127.0.0.1:8000' } },
 })
