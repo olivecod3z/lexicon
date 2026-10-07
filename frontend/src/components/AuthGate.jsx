@@ -5,9 +5,17 @@ import Icon from './Icon'
 import './AuthGate.css'
 
 const friendlyError = error => ({
+  'auth/account-exists-with-different-credential': 'This email is already linked to another sign-in method. Sign in with that method instead.',
+  'auth/app-not-authorized': 'This Lexycon address is not ready for sign-in yet. Please try again shortly.',
   'auth/email-already-in-use': 'That email already has an account. Sign in instead.',
+  'auth/invalid-email': 'Enter a valid email address.',
   'auth/invalid-credential': 'That email or password is incorrect.',
+  'auth/network-request-failed': 'Lexycon could not reach the sign-in service. Check your connection and try again.',
+  'auth/operation-not-allowed': 'Email-and-password sign-up is not available yet. Please try Google or contact Lexycon support.',
   'auth/popup-closed-by-user': 'Google sign-in was cancelled.',
+  'auth/too-many-requests': 'Too many attempts. Please wait a few minutes, then try again.',
+  'auth/unauthorized-domain': 'This Lexycon address is not ready for sign-in yet. Please use dashboard.lexycon.site.',
+  'auth/user-disabled': 'This account has been disabled. Please contact Lexycon support.',
   'auth/weak-password': 'Choose a password with at least 8 characters.',
 }[error.code] || 'Lexycon could not sign you in. Please try again.')
 
@@ -22,12 +30,20 @@ export default function AuthGate({ children }) {
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const isLegacyDashboard = import.meta.env.PROD
+    && window.location.hostname === 'lexycon.site'
+    && window.location.pathname.startsWith('/dashboard')
 
-  useEffect(() => onAuthStateChanged(auth, setUser), [])
-  const openingOnboarding = Boolean(user && new URLSearchParams(window.location.search).has('onboarding'))
-  useEffect(() => { if (openingOnboarding) window.location.replace('/onboarding') }, [openingOnboarding])
+  useEffect(() => {
+    if (isLegacyDashboard) {
+      window.location.replace(`https://dashboard.lexycon.site/${window.location.search}${window.location.hash}`)
+      return undefined
+    }
+    return onAuthStateChanged(auth, setUser)
+  }, [isLegacyDashboard])
+
+  if (isLegacyDashboard) return <main className="auth-page"><p role="status">Opening your Lexycon dashboard…</p></main>
   if (user === undefined) return <main className="auth-page"><p role="status">Opening your study space…</p></main>
-  if (openingOnboarding) return <main className="auth-page"><p role="status">Opening your study setup…</p></main>
   if (user) return <>{children}</>
 
   async function run(action) {
@@ -39,7 +55,8 @@ export default function AuthGate({ children }) {
   function submit(event) {
     event.preventDefault()
     if (password.length < 8) return setError('Choose a password with at least 8 characters.')
-    run(() => mode === 'sign-up' ? createUserWithEmailAndPassword(auth, email, password) : signInWithEmailAndPassword(auth, email, password))
+    const cleanedEmail = email.trim()
+    run(() => mode === 'sign-up' ? createUserWithEmailAndPassword(auth, cleanedEmail, password) : signInWithEmailAndPassword(auth, cleanedEmail, password))
   }
   return <main className="auth-page"><section className="auth-card" aria-labelledby="auth-title"><a className="auth-brand" href="/">lexycon.</a><p className="eyebrow">YOUR PRIVATE STUDY SPACE</p><h1 id="auth-title">{mode === 'sign-up' ? 'Create your account' : 'Welcome back'}</h1><p className="auth-copy">Save your lectures, study materials, and results securely in your own workspace.</p><button className="auth-google" disabled={busy} onClick={() => run(() => signInWithPopup(auth, new GoogleAuthProvider()))}><GoogleMark />Continue with Google</button><div className="auth-divider"><span>or use email</span></div><form onSubmit={submit}><label>Email<input type="email" autoComplete="email" required value={email} onChange={event => setEmail(event.target.value)} /></label><div className="auth-password-field"><label htmlFor="auth-password">Password</label><div className="auth-password-input"><input id="auth-password" type={showPassword ? 'text' : 'password'} autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'} minLength="8" required value={password} onChange={event => setPassword(event.target.value)} /><button type="button" className="auth-password-toggle" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-controls="auth-password" onClick={() => setShowPassword(visible => !visible)}><Icon name={showPassword ? 'eye-off' : 'eye'} /></button></div></div>{error && <p className="auth-error" role="alert">{error}</p>}{notice && <p role="status">{notice}</p>}<button className="button primary auth-submit" disabled={busy}>{busy ? 'Please wait…' : mode === 'sign-up' ? 'Create account' : 'Sign in'}</button></form>{mode === 'sign-in' && <button className="auth-link" disabled={busy} onClick={() => run(async () => { await sendPasswordResetEmail(auth, email); setNotice('Password reset email sent. Check your inbox.') })}>Forgot your password?</button>}<p className="auth-switch">{mode === 'sign-up' ? 'Already have an account?' : 'New to Lexycon?'} <button onClick={() => { setMode(mode === 'sign-up' ? 'sign-in' : 'sign-up'); setShowPassword(false); setError(''); setNotice('') }}>{mode === 'sign-up' ? 'Sign in' : 'Create an account'}</button></p></section></main>
 }

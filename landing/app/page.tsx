@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import usePageVisible from './use-page-visible';
 import HowItWorksCards from './how-it-works-cards';
 import HeroDashboard from './hero-dashboard';
@@ -15,6 +14,7 @@ const cards = [
   { question: 'What is spaced repetition?', answer: 'Revisiting information at increasing intervals to help it stay in your long-term memory.' },
   { question: 'Why review your mistakes?', answer: 'Mistakes reveal gaps in understanding, so your next study session can focus on what needs attention.' },
 ];
+const dashboardUrl = 'https://dashboard.lexycon.site/';
 
 export default function Home() {
   const pageVisible = usePageVisible();
@@ -75,13 +75,13 @@ export default function Home() {
           <nav id="landing-navigation" aria-label="Main navigation" className={menu ? 'nav open' : 'nav'}>
             <a href="#how-it-works" onClick={() => setMenu(false)}>How it works</a><a href="#features" onClick={() => setMenu(false)}>Features</a><a href="#demo" onClick={() => setMenu(false)}>Study demo</a><a href="#pricing" onClick={() => setMenu(false)}>Pricing</a><a href="#faq" onClick={() => setMenu(false)}>Questions</a>
           </nav>
-          <Link className="button lime header-cta" href="/onboarding">Get started <ArrowUpRight size={14} /></Link>
+          <a className="button lime header-cta" href={dashboardUrl}>Get started <ArrowUpRight size={14} /></a>
           <button ref={menuButton} aria-controls="landing-navigation" className="menu-toggle" onClick={() => setMenu(!menu)} aria-label={menu ? 'Close menu' : 'Open menu'} aria-expanded={menu}>{menu ? <X /> : <Menu />}</button>
         </header>
         <div className="landscape-copy">
           <h1 id="hero-title">Turn your lecture pdfs into<br />{' '}notes, flashcards, and quizzes</h1>
           <p>Understand the big ideas, test what you know,<br className="desktop-break" /> and focus on what needs another look.</p>
-          <div className="landscape-actions"><Link className="button lime" href="/onboarding">Get started <ArrowRight size={15} /></Link><a className="button charcoal" href="#how-it-works">See how it works</a></div>
+          <div className="landscape-actions"><a className="button lime" href={dashboardUrl}>Get started <ArrowRight size={15} /></a><a className="button charcoal" href="#how-it-works">See how it works</a></div>
         </div>
         <HeroDashboard />
         <div className="landscape-foreground" aria-hidden="true" />

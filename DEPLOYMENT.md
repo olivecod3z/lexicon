@@ -19,6 +19,35 @@ Website: https://lexycon.site
 Dashboard: https://dashboard.lexycon.site
 Legacy dashboard path: https://lexycon.site/dashboard/
 
+## Sign-in and domain launch checklist
+
+Before inviting students, complete these steps in this order:
+
+1. In **Firebase Console → Authentication → Sign-in method**, enable the
+   **Email/Password** provider and save it. Google sign-in is a separate
+   provider, so enabling Google does not enable email account creation.
+2. Keep `lexycon.site` and `dashboard.lexycon.site` listed in **Authentication
+   → Settings → Authorized domains**. The dashboard subdomain is the canonical
+   place for account creation and the study workspace; the root site's
+   `/dashboard/` path redirects there.
+3. Deploy the API revision before testing a new account. It contains the
+   custom-domain CORS rules and Firebase token verification used by the hosted
+   dashboard:
+
+   ```powershell
+   gcloud run deploy lexicon-api --source . --region europe-west1 --project lexicon-aguet-20260928
+   ```
+
+   Do not add `--set-env-vars` or `--set-secrets` to this command unless you
+   intend to change the service configuration. The deployed service already
+   holds the production settings and OpenAI secret.
+4. Build and deploy the dashboard and landing page as described below. Test a
+   brand-new email at `https://dashboard.lexycon.site/`: create the account,
+   create one course, then sign out and sign back in.
+5. If a security product blocks `lexycon.site`, do not instruct students to
+   bypass it. Verify the live deployment, then send the URL and the false
+   positive evidence to the security provider for reclassification.
+
 The landing page retains its design and content from main commit 4373bc2, with user-requested autoplay enabled for its demos and muted promotional video. The root Firebase Hosting site serves the landing page and retains the old `/dashboard/` path. A second Hosting site serves the dashboard app at the root of `dashboard.lexycon.site`.
 
 Build on Windows from the repository root:

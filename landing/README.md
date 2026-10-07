@@ -13,10 +13,10 @@ The shared Firebase configuration lives at the repository root. From the root,
 run `node scripts/build-hosting.mjs` to build both the landing page and dashboard.
 Then run `firebase deploy --only hosting --project lexicon-study-20260923` from the root.
 
-The landing page's Get started and Open student dashboard links open `/dashboard/`.
-The public dashboard supports PDF/TXT uploads, reading, downloads and deletion in
-a browser-only library. Cloud accounts and AI generation are not connected. Local dashboard
-builds keep the existing API behavior.
+The landing page's Get started and Open student dashboard links open
+`https://dashboard.lexycon.site/`. The dashboard uses Firebase accounts and the
+hosted API for each student's private courses and materials. The root site's
+legacy `/dashboard/` path redirects to the dashboard subdomain after deployment.
 
 ## Repository structure
 
@@ -24,6 +24,8 @@ builds keep the existing API behavior.
 - `../frontend/`: the React study dashboard.
 - `../app/`: the Python API.
 
-These are separate applications hosted together; authentication and billing are not connected. Hosting is not automatically deployed by a Git push.
+These are separate applications hosted together. They share Firebase identity,
+while the dashboard alone calls the authenticated study API. Hosting is not
+automatically deployed by a Git push.
 
 Keep dependencies, build output, Firebase caches and local environment files out of commits. Use a task branch and pull request for future changes, following the root CONTRIBUTING.md.
