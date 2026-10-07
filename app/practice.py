@@ -5,6 +5,7 @@ from openai import OpenAI, OpenAIError
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.mcqs import MCQQuestion
 from app.study_packs import MAX_SOURCE_CHARACTERS
+from app.ai_limits import client_limits, output_limits, record_usage
 from app.text_chunks import split_text_for_generation
 
 class GapQuestion(BaseModel):
@@ -99,7 +100,8 @@ def generate_practice(source_text: str) -> PracticeSet:
     key, model = os.getenv("OPENAI_API_KEY"), os.getenv("OPENAI_MODEL")
     if not key or not model: raise PracticeGenerationError("Mixed practice is not configured. Set OPENAI_API_KEY and OPENAI_MODEL.")
     try:
-        response = OpenAI(api_key=key).responses.create(model=model, instructions=INSTRUCTIONS, input=f"Source material:\n---\n{source_text}\n---", store=False, text={"format":{"type":"json_schema","name":"practice_set","strict":True,"schema":PracticeSet.model_json_schema()}})
+        response = OpenAI(api_key=key, **client_limits()).responses.create(model=model, instructions=INSTRUCTIONS, input=f"Source material:\n---\n{source_text}\n---", store=False, **output_limits(), text={"format":{"type":"json_schema","name":"practice_set","strict":True,"schema":PracticeSet.model_json_schema()}})
+        record_usage(response, "practice", model)
         return PracticeSet.model_validate(json.loads(response.output_text))
     except (OpenAIError, ValueError, json.JSONDecodeError) as error:
-        raise PracticeGenerationError("Lexicon could not generate a valid mixed practice set.") from error
+        raise PracticeGenerationError("Lexycon could not generate a valid mixed practice set.") from error

@@ -17,6 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from typing import Literal
 
 from app.study_packs import MAX_SOURCE_CHARACTERS
+from app.ai_limits import client_limits, output_limits, record_usage
 from app.text_chunks import split_text_for_generation
 
 logger = logging.getLogger(__name__)
@@ -111,7 +112,7 @@ def _select_chunk_cards(card_set: FlashcardSet) -> list[Flashcard]:
 def _generate_flashcards_from_source(source_text: str) -> FlashcardSet:
     """Ask OpenAI for flashcards from one bounded text source."""
     if len(source_text) > MAX_SOURCE_CHARACTERS:
-        raise FlashcardGenerationError("Lexicon received a text chunk that is too large to process.")
+        raise FlashcardGenerationError("Lexycon received a text chunk that is too large to process.")
 
     api_key = os.environ.get("OPENAI_API_KEY")
     model = os.environ.get("OPENAI_MODEL")
@@ -120,13 +121,13 @@ def _generate_flashcards_from_source(source_text: str) -> FlashcardSet:
             "Flashcard generation is not configured. Set OPENAI_API_KEY and OPENAI_MODEL."
         )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, **client_limits())
     try:
         response = client.responses.create(
             model=model,
             instructions=INSTRUCTIONS,
             input=f"Source material:\n---\n{source_text}\n---",
-            store=False,
+            store=False, **output_limits(),
             text={
                 "format": {
                     "type": "json_schema",
@@ -136,17 +137,18 @@ def _generate_flashcards_from_source(source_text: str) -> FlashcardSet:
                 }
             },
         )
+        record_usage(response, "flashcards", model)
         return FlashcardSet.model_validate(json.loads(response.output_text))
     except AuthenticationError as error:
-        logger.warning("OpenAI rejected Lexicon's API key: %s", error.request_id)
-        raise FlashcardGenerationError("OpenAI rejected the API key in Lexicon's .env file.") from error
+        logger.warning("OpenAI rejected Lexycon's API key: %s", error.request_id)
+        raise FlashcardGenerationError("OpenAI rejected the API key in Lexycon's .env file.") from error
     except PermissionDeniedError as error:
-        logger.warning("OpenAI denied Lexicon access: %s", error.request_id)
+        logger.warning("OpenAI denied Lexycon access: %s", error.request_id)
         raise FlashcardGenerationError(
             "This OpenAI project does not have permission to use the selected model."
         ) from error
     except NotFoundError as error:
-        logger.warning("Lexicon's selected OpenAI model was not found: %s", error.request_id)
+        logger.warning("Lexycon's selected OpenAI model was not found: %s", error.request_id)
         raise FlashcardGenerationError("The selected OpenAI model is unavailable to this project.") from error
     except RateLimitError as error:
         logger.warning("OpenAI rate or quota limit reached: %s", error.request_id)
@@ -161,8 +163,8 @@ def _generate_flashcards_from_source(source_text: str) -> FlashcardSet:
     except (json.JSONDecodeError, ValidationError) as error:
         logger.warning("OpenAI returned an invalid flashcard structure: %s", type(error).__name__)
         raise FlashcardGenerationError(
-            "OpenAI returned flashcards that did not pass Lexicon's validation."
+            "OpenAI returned flashcards that did not pass Lexycon's validation."
         ) from error
     except OpenAIError as error:
         logger.warning("Unexpected OpenAI error: %s", type(error).__name__)
-        raise FlashcardGenerationError("Lexicon could not reach OpenAI. Please try again.") from error
+        raise FlashcardGenerationError("Lexycon could not reach OpenAI. Please try again.") from error

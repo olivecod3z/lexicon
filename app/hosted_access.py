@@ -9,16 +9,22 @@ async def enforce_preview_limits(request, call_next):
         from app.cloud_store import reserve_request
         from app.materials import MaterialStorageError
         path = request.url.path
-        kind = "uploads" if path in ("/materials", "/materials/extract") else "generation"
-        if path.endswith(("/submit", "/attempts")):
+        kind = None
+        if path in ("/materials", "/materials/extract"):
+            kind = "uploads"
+        elif path.endswith(("/submit", "/attempts")) or path.startswith("/reviews/"):
             kind = "submissions"
-        limit = {"uploads": 20, "generation": 30, "submissions": 100}[kind]
-        try:
-            allowed = await run_in_threadpool(reserve_request, kind, limit)
-        except MaterialStorageError:
-            return JSONResponse({"detail": "Usage checking is unavailable. Please retry later."}, status_code=503)
-        if not allowed:
-            return JSONResponse({"detail": "This preview has reached its daily limit. Try again tomorrow."}, status_code=429)
+        # AI allowance is reserved after auth/validation by generation_access.
+        # Cached study resources must remain accessible when generation is capped.
+
+        if kind:
+            limit = {"uploads": 20, "generation": 30, "submissions": 100}[kind]
+            try:
+                allowed = await run_in_threadpool(reserve_request, kind, limit)
+            except MaterialStorageError:
+                return JSONResponse({"detail": "Usage checking is unavailable. Please retry later."}, status_code=503)
+            if not allowed:
+                return JSONResponse({"detail": "This preview has reached its daily limit. Try again tomorrow."}, status_code=429)
     response = await call_next(request)
     response.headers["Cache-Control"] = "private, no-store"
     return response

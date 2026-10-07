@@ -15,6 +15,12 @@ def client():
     @app.post("/materials")
     def upload():
         return {"saved": True}
+    @app.post("/courses")
+    def create_course():
+        return {"saved": True}
+    @app.post("/materials/{material_id}/study-pack")
+    def generate_study_pack(material_id: str):
+        return {"saved": True}
     return TestClient(app)
 
 
@@ -33,3 +39,16 @@ def test_daily_cap_still_blocks_upload(monkeypatch):
 def test_upload_within_daily_limit(monkeypatch):
     monkeypatch.setattr("app.cloud_store.reserve_request", lambda kind, limit: True)
     assert client().post("/materials").status_code == 200
+
+
+def test_creating_course_does_not_consume_generation_limit(monkeypatch):
+    def fail_if_reserved(*args):
+        raise AssertionError("Course creation should not reserve an AI usage limit")
+
+    monkeypatch.setattr("app.cloud_store.reserve_request", fail_if_reserved)
+    assert client().post("/courses").status_code == 200
+
+
+def test_cached_generation_is_not_blocked_by_preview_request_cap(monkeypatch):
+    monkeypatch.setattr("app.cloud_store.reserve_request", lambda kind, limit: False)
+    assert client().post("/materials/test-id/study-pack").status_code == 200

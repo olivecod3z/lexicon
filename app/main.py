@@ -1,4 +1,4 @@
-"""HTTP API for Lexicon's study-material workflow."""
+"""HTTP API for Lexycon's study-material workflow."""
 
 import os
 from pathlib import Path
@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.document_text import DocumentExtractionError, SUPPORTED_EXTENSIONS, extract_text
@@ -46,11 +47,12 @@ from app.quizzes import (
 from app.practice import PracticeGenerationError, PracticeSet, PracticeSubmission, PracticeResult, generate_practice, score_practice
 from app.study_packs import StudyPack, StudyPackGenerationError, generate_study_pack
 from app.text_chunks import TextChunkingError
+from app.generation_access import GenerationAccessError, generate_for_account, usage_summary
 
 MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024
 TEXT_PREVIEW_LENGTH = 500
 
-app = FastAPI(title="Lexicon API", version="0.1.0")
+app = FastAPI(title="Lexycon API", version="0.1.0")
 practice_sessions: dict[str, PracticeSet] = {}
 HOSTED = bool(os.getenv("K_SERVICE"))
 if HOSTED:
@@ -61,13 +63,39 @@ if HOSTED:
     from fastapi.middleware.cors import CORSMiddleware
     app.middleware("http")(enforce_preview_limits)
     app.add_middleware(CORSMiddleware,
-        allow_origins=["https://lexicon-aguet-20260928.web.app", "https://lexicon-aguet-20260928.firebaseapp.com"],
+        allow_origins=["https://lexicon-aguet-20260928.web.app", "https://lexicon-aguet-20260928.firebaseapp.com", "https://lexycon.site", "https://dashboard.lexycon.site", "https://lexycon-dashboard-600311691439.web.app"],
         allow_methods=["GET", "POST", "DELETE"], allow_headers=["Content-Type", "Authorization"])
 
 
 
+@app.exception_handler(GenerationAccessError)
+async def generation_access_error(request, error):
+    return JSONResponse({"detail": str(error)}, status_code=error.status_code, headers={"Cache-Control": "private, no-store"})
+
+
+def generate_resource(user, source, kind, model_type, generate):
+    if not HOSTED:
+        return generate(source)
+    if not user.email_verified:
+        raise GenerationAccessError("Verify your email before creating AI study resources. You can still browse your saved work.", 403)
+    try:
+        return generate_for_account(user.uid, source, kind, model_type, generate)
+    except MaterialStorageError as error:
+        raise GenerationAccessError("Usage checking is unavailable. Please try again later.", 503) from error
+
+
+@app.get("/account/usage")
+def get_usage(user: AuthenticatedUser = Depends(current_user)):
+    if not HOSTED:
+        return {"plan": "Local development", "packs_used": 0, "packs_limit": None, "resets_at": None, "subscriptions_available": False}
+    try:
+        return usage_summary(user.uid)
+    except MaterialStorageError as error:
+        raise HTTPException(503, "Usage checking is unavailable. Please try again later.") from error
+
+
 class ExtractionResponse(BaseModel):
-    """A compact confirmation that Lexicon read the uploaded material."""
+    """A compact confirmation that Lexycon read the uploaded material."""
 
     filename: str
     unit_count: int
@@ -86,15 +114,20 @@ class MaterialResponse(BaseModel):
     course_id: str | None = None
 
 
+CourseLevel = Literal["", "100 Level", "200 Level", "300 Level", "400 Level", "500 Level", "600 Level", "Postgraduate", "Other"]
+
+
 class CourseCreate(BaseModel):
     """The small amount of information needed to name a study space."""
 
     name: str
     code: str = ""
     color: str = "green"
+    level: CourseLevel = ""
 
 
 class CourseResponse(BaseModel):
+    level: str = ""
     id: str
     name: str
     code: str
@@ -136,7 +169,7 @@ def health_check() -> dict[str, str]:
 
 
 async def read_supported_upload(file: UploadFile) -> tuple[str, bytes]:
-    """Read one supported upload after applying Lexicon's shared boundary rules."""
+    """Read one supported upload after applying Lexycon's shared boundary rules."""
     filename = file.filename or "uploaded-file"
     extension = Path(filename).suffix.lower()
     if extension not in SUPPORTED_EXTENSIONS:
@@ -180,8 +213,8 @@ def validate_course(data: CourseCreate) -> CourseCreate:
     if len(code) > 16:
         raise HTTPException(status_code=422, detail="Course codes must be 16 characters or fewer.")
     if data.color not in {"green", "blue", "rose", "yellow"}:
-        raise HTTPException(status_code=422, detail="Choose one of Lexicon's course colours.")
-    return CourseCreate(name=name, code=code, color=data.color)
+        raise HTTPException(status_code=422, detail="Choose one of Lexycon's course colours.")
+    return CourseCreate(name=name, code=code, color=data.color, level=data.level)
 
 
 def load_material_or_404(owner_id: str, material_id: str) -> StoredMaterial:
@@ -234,7 +267,7 @@ def create_course(data: CourseCreate, user: AuthenticatedUser = Depends(current_
     """Create the one full-featured course included in the free plan."""
     data = validate_course(data)
     try:
-        course = save_course(user.uid, data.name, data.code, data.color) if HOSTED else save_course(data.name, data.code, data.color)
+        course = save_course(user.uid, data.name, data.code, data.color, data.level) if HOSTED else save_course(data.name, data.code, data.color, data.level)
         return course_response(course)
     except CourseLimitError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
@@ -333,7 +366,7 @@ async def create_study_pack(file: UploadFile = File(...), user: AuthenticatedUse
 
     try:
         text, _ = extract_text(filename, file_bytes)
-        return generate_study_pack(text)
+        return generate_resource(user, text, "notes", StudyPack, generate_study_pack)
     except DocumentExtractionError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (StudyPackGenerationError, TextChunkingError) as error:
@@ -347,7 +380,7 @@ async def create_flashcards(file: UploadFile = File(...), user: AuthenticatedUse
 
     try:
         text, _ = extract_text(filename, file_bytes)
-        return generate_flashcards(text)
+        return generate_resource(user, text, "cards", FlashcardSet, generate_flashcards)
     except DocumentExtractionError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (FlashcardGenerationError, TextChunkingError) as error:
@@ -361,7 +394,7 @@ async def create_mcqs(file: UploadFile = File(...), user: AuthenticatedUser = De
 
     try:
         text, _ = extract_text(filename, file_bytes)
-        return generate_mcqs(text)
+        return generate_resource(user, text, "mcqs", MCQSet, generate_mcqs)
     except DocumentExtractionError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except (MCQGenerationError, TextChunkingError) as error:
@@ -373,7 +406,7 @@ def create_study_pack_from_saved_material(material_id: str, user: AuthenticatedU
     """Generate notes from material saved by the upload-once workflow."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        return generate_study_pack(material.source_text)
+        return generate_resource(user, material.source_text, "notes", StudyPack, generate_study_pack)
     except (StudyPackGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
@@ -383,7 +416,7 @@ def create_flashcards_from_saved_material(material_id: str, user: AuthenticatedU
     """Generate flashcards from material saved by the upload-once workflow."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        flashcards = generate_flashcards(material.source_text)
+        flashcards = generate_resource(user, material.source_text, "cards", FlashcardSet, generate_flashcards)
         if HOSTED:
             save_flashcards(user.uid, material.id, material.course_id, flashcards.flashcards)
         else:
@@ -400,7 +433,7 @@ def create_mcqs_from_saved_material(material_id: str, user: AuthenticatedUser = 
     """Generate MCQs from material saved by the upload-once workflow."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        return generate_mcqs(material.source_text)
+        return generate_resource(user, material.source_text, "mcqs", MCQSet, generate_mcqs)
     except (MCQGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
@@ -410,7 +443,7 @@ def create_mixed_practice(material_id: str, user: AuthenticatedUser = Depends(cu
     """Generate MCQ, keyword-recall, and theory practice from one material."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        return generate_practice(material.source_text)
+        return generate_resource(user, material.source_text, "practice", PracticeSet, generate_practice)
     except (PracticeGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
@@ -442,7 +475,7 @@ def create_saved_quiz(material_id: str, user: AuthenticatedUser = Depends(curren
     """Generate and save an MCQ quiz from a material for later quiz-taking."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        quiz = save_quiz(user.uid, material_id, generate_mcqs(material.source_text)) if HOSTED else save_quiz(material_id, generate_mcqs(material.source_text))
+        quiz = save_quiz(user.uid, material_id, generate_resource(user, material.source_text, "mcqs", MCQSet, generate_mcqs)) if HOSTED else save_quiz(material_id, generate_resource(user, material.source_text, "mcqs", MCQSet, generate_mcqs))
     except (MCQGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     except MaterialStorageError as error:

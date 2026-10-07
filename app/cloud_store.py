@@ -23,12 +23,19 @@ def guarded(function):
     return run
 
 @guarded
-def save_course(owner_id, name, code="", color="green"):
+def save_course(owner_id, name, code="", color="green", level=""):
+    from app.generation_access import account_key
     existing = list(database().collection("courses").where("owner_id", "==", owner_id).limit(2).stream())
-    if existing:
-        raise CourseLimitError("The free plan includes one course. More courses will be available with a paid plan.")
-    course = StoredCourse(str(uuid4()), name, code, color, datetime.now(UTC).isoformat())
-    database().collection("courses").document(course.id).set({**asdict(course), "owner_id": owner_id})
+    course = StoredCourse(str(uuid4()), name, code, color, datetime.now(UTC).isoformat(), level)
+    slot = database().collection("course_slots").document(account_key(owner_id))
+    @firestore.transactional
+    def create(transaction):
+        allocation = slot.get(transaction=transaction).to_dict() or {}
+        if existing or allocation.get("used", 0) >= 1:
+            raise CourseLimitError("The free plan includes one course. More courses will be available with a paid plan.")
+        transaction.set(slot, {"used": 1})
+        transaction.set(database().collection("courses").document(course.id), {**asdict(course), "owner_id": owner_id})
+    create(database().transaction())
     return course
 
 
@@ -71,8 +78,16 @@ def list_materials(owner_id):
 
 @guarded
 def delete_material(owner_id, material_id):
-    get_material(owner_id, material_id)
-    database().collection("materials").document(material_id).delete()
+    from app.generation_access import source_key
+    material = get_material(owner_id, material_id)
+    pack = database().collection("generated_packs").document(source_key(owner_id, material.source_text))
+    @firestore.transactional
+    def remove(transaction):
+        value = pack.get(transaction=transaction).to_dict()
+        if value:
+            transaction.set(pack, {**value, "resources": {}, "lease_until": 0, "claim": None})
+        transaction.delete(database().collection("materials").document(material_id))
+    remove(database().transaction())
 
 @guarded
 def save_quiz(owner_id, material_id, mcq_set):
@@ -112,12 +127,17 @@ def get_practice(owner_id, practice_id):
 
 @guarded
 def save_flashcards(owner_id, material_id, course_id, flashcards, now=None):
+    import hashlib
     due_at = (now or datetime.now(UTC)).isoformat()
-    cards = [StoredReviewCard(str(uuid4()), material_id, course_id, card.card_type, card.question, card.answer, card.topic, due_at, 0) for card in flashcards]
-    batch = database().batch()
-    for card in cards:
-        batch.set(database().collection("review_cards").document(card.id), {**asdict(card), "owner_id": owner_id})
-    batch.commit()
+    cards = [StoredReviewCard(hashlib.sha256(f"{owner_id}:{material_id}:{i}:{card.question}".encode()).hexdigest(), material_id, course_id, card.card_type, card.question, card.answer, card.topic, due_at, 0) for i, card in enumerate(flashcards)]
+    @firestore.transactional
+    def save_missing(transaction):
+        refs = [database().collection("review_cards").document(card.id) for card in cards]
+        exists = [ref.get(transaction=transaction).exists for ref in refs]
+        for ref, card, present in zip(refs, cards, exists):
+            if not present:
+                transaction.set(ref, {**asdict(card), "owner_id": owner_id})
+    save_missing(database().transaction())
     return cards
 
 

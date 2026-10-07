@@ -1,4 +1,4 @@
-"""Small local persistence layer for extracted Lexicon materials."""
+"""Small local persistence layer for extracted Lexycon materials."""
 
 import sqlite3
 from contextlib import contextmanager
@@ -17,7 +17,7 @@ class MaterialNotFoundError(LookupError):
 
 
 class MaterialStorageError(RuntimeError):
-    """Raised when Lexicon cannot read or write its local material store."""
+    """Raised when Lexycon cannot read or write its local material store."""
 
 
 class CourseLimitError(RuntimeError):
@@ -46,6 +46,7 @@ class StoredCourse:
     code: str
     color: str
     created_at: str
+    level: str = ""
 
 
 @dataclass(frozen=True)
@@ -118,7 +119,7 @@ def save_material(filename: str, source_text: str, unit_count: int, course_id: s
                 ),
             )
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not save this material locally.") from error
+        raise MaterialStorageError("Lexycon could not save this material locally.") from error
 
     return material
 
@@ -136,7 +137,7 @@ def get_material(material_id: str) -> StoredMaterial:
                 (material_id,),
             ).fetchone()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not read its local material store.") from error
+        raise MaterialStorageError("Lexycon could not read its local material store.") from error
 
     if row is None:
         raise MaterialNotFoundError(material_id)
@@ -153,26 +154,26 @@ def list_materials() -> list[dict]:
                 "FROM materials ORDER BY created_at DESC, id DESC"
             ).fetchall()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not load your saved materials. Please try again.") from error
+        raise MaterialStorageError("Lexycon could not load your saved materials. Please try again.") from error
     return [dict(row) for row in rows]
 
 
-def save_course(name: str, code: str = "", color: str = "green") -> StoredCourse:
+def save_course(name: str, code: str = "", color: str = "green", level: str = "") -> StoredCourse:
     """Create the first local course used to group related lecture materials."""
-    course = StoredCourse(str(uuid4()), name, code, color, datetime.now(UTC).isoformat())
+    course = StoredCourse(str(uuid4()), name, code, color, datetime.now(UTC).isoformat(), level)
     try:
         with _database_connection() as connection:
             existing = connection.execute("SELECT COUNT(*) FROM courses").fetchone()[0]
             if existing >= 1:
                 raise CourseLimitError("The free plan includes one course. More courses will be available with a paid plan.")
             connection.execute(
-                "INSERT INTO courses (id, name, code, color, created_at) VALUES (?, ?, ?, ?, ?)",
-                (course.id, course.name, course.code, course.color, course.created_at),
+                "INSERT INTO courses (id, name, code, color, created_at, level) VALUES (?, ?, ?, ?, ?, ?)",
+                (course.id, course.name, course.code, course.color, course.created_at, course.level),
             )
     except CourseLimitError:
         raise
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not save this course locally.") from error
+        raise MaterialStorageError("Lexycon could not save this course locally.") from error
     return course
 
 
@@ -180,9 +181,9 @@ def list_courses() -> list[StoredCourse]:
     """Return the local student's courses, newest first."""
     try:
         with _database_connection() as connection:
-            rows = connection.execute("SELECT id, name, code, color, created_at FROM courses ORDER BY created_at DESC").fetchall()
+            rows = connection.execute("SELECT id, name, code, color, created_at, level FROM courses ORDER BY created_at DESC").fetchall()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not load your courses. Please try again.") from error
+        raise MaterialStorageError("Lexycon could not load your courses. Please try again.") from error
     return [StoredCourse(**dict(row)) for row in rows]
 
 
@@ -206,7 +207,7 @@ def save_flashcards(material_id: str, course_id: str | None, flashcards, now: da
                 [(card.id, card.material_id, card.course_id, card.card_type, card.question, card.answer, card.topic, card.due_at, card.interval_days) for card in cards],
             )
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not save these flashcards for review.") from error
+        raise MaterialStorageError("Lexycon could not save these flashcards for review.") from error
     return cards
 
 
@@ -221,7 +222,7 @@ def list_due_flashcards(now: datetime | None = None) -> list[StoredReviewCard]:
                 (due_at,),
             ).fetchall()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not load today's recall. Please try again.") from error
+        raise MaterialStorageError("Lexycon could not load today's recall. Please try again.") from error
     return [StoredReviewCard(**dict(row)) for row in rows]
 
 
@@ -249,7 +250,7 @@ def review_flashcard(card_id: str, rating: str, now: datetime | None = None) -> 
     except MaterialNotFoundError:
         raise
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not save this review. Please try again.") from error
+        raise MaterialStorageError("Lexycon could not save this review. Please try again.") from error
     return updated
 
 
@@ -262,7 +263,7 @@ def get_recall_progress(now: datetime | None = None) -> StoredRecallProgress:
                 "SELECT substr(reviewed_at, 1, 10) AS study_day FROM review_events ORDER BY study_day DESC"
             ).fetchall()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not load your review progress. Please try again.") from error
+        raise MaterialStorageError("Lexycon could not load your review progress. Please try again.") from error
 
     study_days = {datetime.fromisoformat(row["study_day"]).date() for row in rows}
     reviewed_today = sum(datetime.fromisoformat(row["study_day"]).date() == today for row in rows)
@@ -280,7 +281,7 @@ def delete_material(material_id: str) -> None:
         with _database_connection() as connection:
             result = connection.execute("DELETE FROM materials WHERE id = ?", (material_id,))
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not delete this material locally.") from error
+        raise MaterialStorageError("Lexycon could not delete this material locally.") from error
 
     if result.rowcount == 0:
         raise MaterialNotFoundError(material_id)
@@ -304,7 +305,7 @@ def save_quiz(material_id: str, mcq_set: MCQSet) -> StoredQuiz:
                 (quiz.id, quiz.material_id, quiz.mcq_set.model_dump_json(), quiz.created_at),
             )
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not save this quiz locally.") from error
+        raise MaterialStorageError("Lexycon could not save this quiz locally.") from error
 
     return quiz
 
@@ -322,7 +323,7 @@ def get_quiz(quiz_id: str) -> StoredQuiz:
                 (quiz_id,),
             ).fetchone()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not read its local quiz store.") from error
+        raise MaterialStorageError("Lexycon could not read its local quiz store.") from error
 
     if row is None:
         raise MaterialNotFoundError(quiz_id)
@@ -345,7 +346,7 @@ def save_attempt(quiz_id: str, result_json: str) -> StoredAttempt:
                 (attempt.id, attempt.quiz_id, attempt.result_json, attempt.created_at),
             )
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not save this quiz attempt locally.") from error
+        raise MaterialStorageError("Lexycon could not save this quiz attempt locally.") from error
     return attempt
 
 
@@ -358,7 +359,7 @@ def list_attempts(quiz_id: str) -> list[StoredAttempt]:
                 (quiz_id,),
             ).fetchall()
     except sqlite3.Error as error:
-        raise MaterialStorageError("Lexicon could not read saved quiz attempts.") from error
+        raise MaterialStorageError("Lexycon could not read saved quiz attempts.") from error
     return [StoredAttempt(**dict(row)) for row in rows]
 
 
@@ -419,6 +420,9 @@ def _connect() -> sqlite3.Connection:
         )
         """
     )
+    course_columns = {row[1] for row in connection.execute("PRAGMA table_info(courses)").fetchall()}
+    if "level" not in course_columns:
+        connection.execute("ALTER TABLE courses ADD COLUMN level TEXT NOT NULL DEFAULT ''")
     connection.execute(
         """
         CREATE TABLE IF NOT EXISTS quiz_attempts (
