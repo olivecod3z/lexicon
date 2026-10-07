@@ -1,14 +1,14 @@
-# Lexicon Design System
+# Lexycon Design System
 
-> Product design source of truth for Codex. Companion to `AGENTS.md` and `Lexicon_Codex_Project_Brief.md`.
+> Product design source of truth for Codex. Companion to `AGENTS.md` and `Lexycon_Codex_Project_Brief.md`.
 
 ## 1. Design North Star
 
-Lexicon is an AI-powered study system for university students.
+Lexycon is an AI-powered study system for university students.
 
 **Core principle: Calm while studying. Energetic while testing. Rewarding when progressing.**
 
-Lexicon should feel intelligent, modern, focused, youthful without being childish, and premium without feeling corporate. It must not look like a generic AI dashboard or a children's learning game.
+Lexycon should feel intelligent, modern, focused, youthful without being childish, and premium without feeling corporate. It must not look like a generic AI dashboard or a children's learning game.
 
 When goals conflict, prioritize:
 1. Learning clarity
@@ -45,7 +45,7 @@ https://kahoot.com/
 
 The desired blend is:
 
-**Wayground polish + Quizlet seriousness + Blooket reward timing + Kahoot microinteractions + an original Lexicon identity.**
+**Wayground polish + Quizlet seriousness + Blooket reward timing + Kahoot microinteractions + an original Lexycon identity.**
 
 ## 3. Experience Modes
 
@@ -296,7 +296,7 @@ Prefer transform/opacity, avoid excessive bounce, never delay important actions,
 
 ## 23. Microinteractions
 
-Lexicon should respond immediately: subtle button press, clear answer selection, animated progress, instant saved state, reactive upload dropzone, brief correct-answer feedback, restrained completion celebration.
+Lexycon should respond immediately: subtle button press, clear answer selection, animated progress, instant saved state, reactive upload dropzone, brief correct-answer feedback, restrained completion celebration.
 
 Alive, not busy.
 
@@ -326,7 +326,7 @@ Errors should state what failed and what the student can do. Preserve work where
 
 Never imply certainty that the model cannot guarantee. Support source grounding where available, regeneration/correction where useful, honest processing states, and graceful failure.
 
-Do not plaster “AI” across every component. AI powers Lexicon; it is not the whole visual identity.
+Do not plaster “AI” across every component. AI powers Lexycon; it is not the whole visual identity.
 
 ## 28. Accessibility
 
@@ -377,7 +377,7 @@ A learning pack is one uploaded lecture plus the generated study resources for i
 - Up to 100 Ask My Material questions per month when implemented.
 - Custom practice sets of up to 20 prompts; saved practice templates when implemented.
 - Larger/longer lecture-material support, advanced weak-topic analytics, targeted practice, and higher storage when implemented.
-- Do not promise priority processing unless Lexicon can reliably provide it.
+- Do not promise priority processing unless Lexycon can reliably provide it.
 
 Theory prompts are currently for self-review; do not describe them as automatically graded until theory feedback has been implemented and validated.
 
@@ -399,7 +399,7 @@ Centralize colors, typography, spacing, radii, shadows, transitions, and breakpo
 Reusable primitives may include:
 `Button`, `IconButton`, `Input`, `Textarea`, `Select`, `Dialog`, `Tooltip`, `Badge`, `Progress`, `Card`, `Tabs`, `Toast`, `Skeleton`, `EmptyState`.
 
-Lexicon components may include:
+Lexycon components may include:
 `CourseCard`, `MaterialCard`, `StudyPackCard`, `UploadDropzone`, `ProcessingStatus`, `Flashcard`, `QuizQuestion`, `AnswerOption`, `QuizProgress`, `Timer`, `AnswerFeedback`, `ResultsSummary`, `TopicMastery`, `StudyRecommendation`.
 
 Do not abstract prematurely.
@@ -409,7 +409,7 @@ Do not abstract prematurely.
 When implementing UI, Codex must:
 
 1. Read this file before major visual work.
-2. Read `AGENTS.md` and `Lexicon_Codex_Project_Brief.md`.
+2. Read `AGENTS.md` and `Lexycon_Codex_Project_Brief.md`.
 3. Inspect existing components before creating new ones.
 4. Reuse tokens and primitives.
 5. Keep styling consistent across routes.
@@ -421,12 +421,12 @@ When implementing UI, Codex must:
 11. Test important flows at desktop and mobile widths.
 12. Respect reduced-motion preferences.
 13. Never blindly clone a reference product.
-14. If a design decision is not covered here, choose the simplest solution consistent with Lexicon's principles.
+14. If a design decision is not covered here, choose the simplest solution consistent with Lexycon's principles.
 15. When a new pattern becomes recurring, update this design system instead of allowing visual drift.
 
 ## 35. Anti-Patterns
 
-Lexicon must not become:
+Lexycon must not become:
 - a Wayground clone,
 - a Quizlet clone,
 - a Kahoot clone,
@@ -441,7 +441,7 @@ Lexicon must not become:
 
 A student should be able to upload a difficult lecture, understand what matters, practice it, see where they are weak, and know what to study next without fighting the interface.
 
-Lexicon should be **calm enough for a two-hour study session and engaging enough that practice never feels dead.**
+Lexycon should be **calm enough for a two-hour study session and engaging enough that practice never feels dead.**
 
 Build the interface around that standard.
 
