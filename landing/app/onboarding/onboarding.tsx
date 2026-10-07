@@ -181,7 +181,7 @@ export default function Onboarding() {
     <div className="onboarding-shell">
       <a className="setup-skip-link" href="#setup-main">Skip to setup</a>
       <header className="setup-header">
-        <Link className="setup-brand" href="/" aria-label="Lexicon home"><Layers size={22} /><span>lexicon<span className="setup-dot">.</span></span></Link>
+        <Link className="setup-brand" href="/" aria-label="Lexycon home"><Layers size={22} /><span>lexycon<span className="setup-dot">.</span></span></Link>
         <span className="setup-header-label">A little clearer, every day.</span>
         <Link className="setup-exit" href="/"><ChevronLeft size={16} /> Back to home</Link>
       </header>

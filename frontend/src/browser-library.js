@@ -10,7 +10,7 @@ function database() {
     request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: 'id' })
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(Error('Your browser could not open the local library. Check its storage settings.'))
-    request.onblocked = () => reject(Error('Close other Lexicon tabs, then try again.'))
+    request.onblocked = () => reject(Error('Close other Lexycon tabs, then try again.'))
   })
 }
 async function transaction(mode, run) {

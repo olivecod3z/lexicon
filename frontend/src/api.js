@@ -12,11 +12,11 @@ export async function api(path, options) {
   }
   let response
   try { response = await fetch(path, options) }
-  catch { throw Error('Cannot reach Lexicon. Check that the local service is running, then try again.') }
+  catch { throw Error('Cannot reach Lexycon. Check that the local service is running, then try again.') }
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    throw Error(typeof data?.detail === 'string' ? data.detail : 'Lexicon could not complete this request. Please try again.')
+    throw Error(typeof data?.detail === 'string' ? data.detail : 'Lexycon could not complete this request. Please try again.')
   }
-  if (!data) throw Error('Lexicon returned an unexpected response. Please try again.')
+  if (!data) throw Error('Lexycon returned an unexpected response. Please try again.')
   return data
 }

@@ -1,4 +1,8 @@
-# Lexicon Design System
+# Lexycon Design System
+
+The visible product name is **Lexycon** (`lexycon.` in wordmarks). Existing
+`lexicon` infrastructure identifiers, API URLs, asset paths and storage keys
+remain unchanged.
 
 > Product design source of truth for Codex. Companion to `AGENTS.md` and `Lexicon_Codex_Project_Brief.md`.
 

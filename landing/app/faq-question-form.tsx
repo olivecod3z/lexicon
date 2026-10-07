@@ -24,7 +24,7 @@ export default function FaqQuestionForm({ onSubmit, confirmation }: Props) {
     }
   }}>
     <label htmlFor="faq-question">Ask anything</label>
-    <p id="faq-question-hint">Something else on your mind? Ask us about Lexicon.</p>
+    <p id="faq-question-hint">Something else on your mind? Ask us about Lexycon.</p>
     <div className="faq-question-field">
       <textarea id="faq-question" name="question" required maxLength={300} rows={3}
         placeholder="What would you like to know?" aria-describedby="faq-question-hint"
