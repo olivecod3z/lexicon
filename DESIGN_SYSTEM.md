@@ -1,5 +1,9 @@
 # Lexycon Design System
 
+The visible product name is **Lexycon** (`lexycon.` in wordmarks). Existing
+`lexicon` infrastructure identifiers, API URLs and storage keys remain unchanged
+until a separate migration is planned.
+
 > Product design source of truth for Codex. Companion to `AGENTS.md` and `Lexycon_Codex_Project_Brief.md`.
 
 ## 1. Design North Star
