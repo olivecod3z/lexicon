@@ -8,6 +8,8 @@ import Practice from './components/Practice'
 import AccountAllowance from './components/AccountAllowance'
 import TodayRecall from './components/TodayRecall'
 import { StudyNotes, FlashcardReview, GenerateResource } from './components/StudyResources'
+import InitialOnboarding from './components/InitialOnboarding'
+import { auth } from './firebase'
 import './App.css'
 import './components/Practice.css'
 
@@ -21,9 +23,6 @@ function StudyDashboard() {
   const [materials, setMaterials] = useState([])
   const [courses, setCourses] = useState([])
   const [selectedCourseId, setSelectedCourseId] = useState(null)
-  const [courseName, setCourseName] = useState('')
-  const [courseCode, setCourseCode] = useState('')
-  const [courseLevel, setCourseLevel] = useState('')
   const [selectedId, setSelectedId] = useState(null)
   // Keep each lecture's generated resources and answers together when switching views.
   const [resources, setResources] = useState({})
@@ -87,15 +86,20 @@ function StudyDashboard() {
     }
     catch (error) { setNotice({ error: true, text: error.message }) }
   }
-  async function createFirstCourse(event) {
-    event.preventDefault()
-    if (busy) return
-    setPending('course'); setNotice({ text: 'Creating your study space…' })
+  async function completeInitialSetup(setup) {
+    setPending('onboarding')
     try {
-      const course = await api('/courses', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: courseName, code: courseCode, color: 'green', level: courseLevel }) })
-      setCourses([course]); setSelectedCourseId(course.id); setCourseName(''); setCourseCode(''); setCourseLevel(''); setNotice(null)
-    } catch (error) { setNotice({ error: true, text: error.message }) }
-    finally { setPending(null) }
+      const course = await api('/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(setup.course),
+      })
+      setCourses([course])
+      setSelectedCourseId(course.id)
+      setNotice(null)
+    } finally {
+      setPending(null)
+    }
   }
   async function uploadFile(file) {
     if (!file || busy) return
@@ -147,16 +151,22 @@ function StudyDashboard() {
     finally { setPending(null) }
   }
 
-  function renderCourseSetup() {
-    return <section className="course-setup"><p className="eyebrow">YOUR FREE STUDY SPACE</p><h2>What are you studying?</h2><p>Choose one university course to start studying with Lexycon. It will hold your lectures, notes, flashcards and practice.</p><form onSubmit={createFirstCourse}><label>Course name<input required maxLength="100" value={courseName} onChange={event => setCourseName(event.target.value)} placeholder="e.g. Introduction to Computer Science" /></label><label>Level <span className="muted">Optional</span><select value={courseLevel} onChange={event => setCourseLevel(event.target.value)}><option value="">Select your level</option>{['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', '600 Level', 'Postgraduate', 'Other'].map(level => <option key={level} value={level}>{level}</option>)}</select></label><label>Course code <span className="muted">Optional</span><input maxLength="16" value={courseCode} onChange={event => setCourseCode(event.target.value)} placeholder="e.g. CSC 201" /></label><button className="button primary" disabled={busy}>{pending === 'course' ? 'Creating…' : 'Create my study space'}</button></form></section>
-  }
   function renderLibrary(limit) {
     return <section className="materials-section"><div className="section-heading"><h2>{limit ? 'Your recent materials' : 'Your materials'}</h2>{limit && materials.length > limit && <button className="text-button" onClick={() => navigate('materials')}>View all <Icon name="arrow" /></button>}</div>{loadingLibrary && <p className="muted" role="status">Loading your library…</p>}{libraryError && <LibraryState unavailable onRetry={reloadLibrary} loading={loadingLibrary} />}{materials.length ? <div className="material-list">{materials.slice(0, limit || materials.length).map(item => <article className="material-row" key={item.id}><span className="file-symbol"><Icon name="file" /></span><div><h3>{item.filename}</h3><p>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {resources[item.id]?.notes ? 'Notes ready' : 'Ready to study'}{resources[item.id]?.cards ? ' · Flashcards ready' : ''}</p></div><button className="button secondary" disabled={busy} onClick={() => openMaterial(item)}>Open <Icon name="arrow" /></button></article>)}</div> : !loadingLibrary && !libraryError && <LibraryState />}</section>
   }
 
+  if (!loadingLibrary && !libraryError && !courses.length) {
+    const user = auth.currentUser
+    return <InitialOnboarding
+      defaultName={user?.displayName || ''}
+      storageKey={`lexycon.onboarding.v2.${user?.uid || 'current-user'}`}
+      onComplete={completeInitialSetup}
+    />
+  }
+
   return <div className="workspace focused-workspace"><a className="skip-link" href="#main-content">Skip to content</a><aside className={`sidebar ${mobileOpen ? 'is-open' : ''}`}><a className="brand" href="#" onClick={event => { event.preventDefault(); navigate('overview') }}><Icon name="layers" /><span>lexycon.</span></a><p className="nav-caption">MY WORKSPACE</p><nav aria-label="Main navigation">{navigation.map(([id, icon, label]) => <button key={id} className={view === id ? 'active' : ''} aria-current={view === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon name={icon} />{label}</button>)}</nav><div className="sidebar-bottom"><p>YOUR STUDY TOOLS</p>{tabs.map(([id, icon, label]) => <button className="tool-link" key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} />{label}</button>)}<SignOutButton /></div></aside>{mobileOpen && <button className="nav-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}<div className="workspace-main"><header className="topbar"><button className="icon-button mobile-menu" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)}><Icon name={mobileOpen ? 'close' : 'menu'} /></button><div className="breadcrumb"><b>{navigation.find(item => item[0] === view)?.[2]}</b>{selectedCourse && <span>· {selectedCourse.code || selectedCourse.name}{selectedCourse.level && ` · ${selectedCourse.level}`}</span>}</div>{material && view === 'study' && <span className="current-file">{material.filename}</span>}<input ref={uploadInput} type="file" hidden accept=".pdf,.docx,.pptx,.txt" onChange={event => { uploadFile(event.target.files[0]); event.target.value = '' }} /><button className="button primary" disabled={busy || !selectedCourseId} onClick={() => uploadInput.current?.click()}><Icon name="upload" />Upload PDF</button></header><main id="main-content" tabIndex="-1" ref={heading} className="main-content"><div className={`status-message ${notice?.error ? 'error' : ''}`} role={notice?.error ? 'alert' : 'status'} hidden={!notice}>{notice?.text}</div>
     <AccountAllowance refreshKey={pending} />
-    {view === 'overview' && <><div className="page-heading"><div><h1>{selectedCourse ? selectedCourse.name : 'Your study dashboard'}</h1><p>{selectedCourse ? 'Your course, organised in one place.' : 'Upload a lecture. Study your notes. Test what you know.'}</p></div></div>{!loadingLibrary && !courses.length ? renderCourseSetup() : <><UploadCard onUpload={uploadFile} busy={busy} /><div className="tool-overview">{tabs.map(([id, icon, label]) => <button key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} /><div><b>{label}</b><span>{id === 'notes' ? 'Key ideas from your lectures' : id === 'cards' ? 'Recall and review key concepts' : 'MCQs, keyword gaps and theory'}</span></div><Icon name="arrow" /></button>)}</div>{material && <section className="resume-strip"><div><span className="muted">CONTINUE STUDYING</span><h3>{material.filename}</h3></div><button className="button dark" onClick={() => navigate('study')}>Resume <Icon name="arrow" /></button></section>}{renderLibrary(5)}</>}</>}
+    {view === 'overview' && <><div className="page-heading"><div><h1>{selectedCourse ? selectedCourse.name : 'Your study dashboard'}</h1><p>{selectedCourse ? 'Your course, organised in one place.' : 'Upload a lecture. Study your notes. Test what you know.'}</p></div></div><UploadCard onUpload={uploadFile} busy={busy} /><div className="tool-overview">{tabs.map(([id, icon, label]) => <button key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} /><div><b>{label}</b><span>{id === 'notes' ? 'Key ideas from your lectures' : id === 'cards' ? 'Recall and review key concepts' : 'MCQs, keyword gaps and theory'}</span></div><Icon name="arrow" /></button>)}</div>{material && <section className="resume-strip"><div><span className="muted">CONTINUE STUDYING</span><h3>{material.filename}</h3></div><button className="button dark" onClick={() => navigate('study')}>Resume <Icon name="arrow" /></button></section>}{renderLibrary(5)}</>}
     {view === 'recall' && <TodayRecall key={reviewCards[0]?.id || 'complete'} cards={reviewCards} progress={recallProgress} busy={busy} onRate={rateRecallCard} />}
     {view === 'materials' && <><div className="page-heading"><div><h1>My materials</h1><p>Your saved lectures. Open a file to access its study tools.</p></div></div>{renderLibrary()}<div className="compact-upload"><UploadCard onUpload={uploadFile} busy={busy} /></div></>}
     {view === 'study' && (!material ? <><div className="page-heading"><div><h1>{tabs.find(item => item[0] === tab)[2]}</h1><p>Choose a lecture from your library or upload a PDF to get started.</p></div></div><UploadCard onUpload={uploadFile} busy={busy} /><div className="library-spacing">{renderLibrary()}</div></> : <><div className="page-heading study-heading"><div><button className="text-button" onClick={() => navigate('materials')}>← My materials</button><h1>{material.filename}</h1><p>Study tools built from this lecture.</p></div></div><div className="segmented" aria-label="Lecture study tools">{tabs.map(([id, icon, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><Icon name={icon} />{label}</button>)}</div>{tab === 'notes' && (current.notes ? <StudyNotes notes={current.notes} /> : <GenerateResource type="notes" busy={busy} onGenerate={() => generate('notes')} />)}{tab === 'cards' && (current.cards ? <FlashcardReview key={selectedId} cards={current.cards} /> : <GenerateResource type="cards" busy={busy} onGenerate={() => generate('cards')} />)}{tab === 'practice' && (practice ? <Practice {...{ practice, mcqAnswers, gapAnswers, theoryAnswers, result, submitPractice }} setMcqAnswers={answers => updateResource(selectedId, { mcqAnswers: answers, result: null })} setGapAnswers={answers => updateResource(selectedId, { gapAnswers: answers, result: null })} setTheoryAnswers={answers => updateResource(selectedId, { theoryAnswers: answers })} setResult={value => updateResource(selectedId, { result: value })} isSubmitting={pending === 'submit'} /> : <GenerateResource type="practice" busy={busy} onGenerate={() => generate('practice')} />)}<p className="session-footnote">Generated resources are saved to your account. Reopening them uses no extra pack allowance. Your current practice answers remain available during this visit.</p></>)}
