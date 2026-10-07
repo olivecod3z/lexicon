@@ -9,11 +9,11 @@ export async function api(path, options) {
   const headers = new Headers(options?.headers)
   headers.set('Authorization', `Bearer ${token}`)
   try { response = await fetch(`${apiBaseUrl}${path}`, { ...options, headers }) }
-  catch { throw Error('Cannot reach Lexicon. Please try again in a moment.') }
+  catch { throw Error('Cannot reach Lexycon. Please try again in a moment.') }
   const data = await response.json().catch(() => null)
   if (!response.ok) {
-    throw Error(typeof data?.detail === 'string' ? data.detail : 'Lexicon could not complete this request. Please try again.')
+    throw Error(typeof data?.detail === 'string' ? data.detail : 'Lexycon could not complete this request. Please try again.')
   }
-  if (!data) throw Error('Lexicon returned an unexpected response. Please try again.')
+  if (!data) throw Error('Lexycon returned an unexpected response. Please try again.')
   return data
 }

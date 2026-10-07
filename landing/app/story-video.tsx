@@ -37,17 +37,17 @@ export default function StoryVideo() {
   return <section className="story-section wrap" aria-labelledby="story-title">
     <div className="story-copy">
       <h2 id="story-title">See the study routine<br /><span className="heading-continuation">come to life.</span></h2>
-      <p>A short introduction to the idea behind Lexicon: turn your lectures into notes, practise what you know, and make room for understanding.</p>
+      <p>A short introduction to the idea behind Lexycon: turn your lectures into notes, practise what you know, and make room for understanding.</p>
       <p className="story-availability">You can upload and read documents in the live dashboard today. Automated study tools shown in the video are not connected online yet.</p>
-      <a className="button lime" href="/dashboard/">Open student dashboard</a>
+      <a className="button lime" href="https://dashboard.lexycon.site/">Open student dashboard</a>
     </div>
     <figure className="story-figure">
       <div className="story-player">
-        <video ref={video} src="/videos/lexicon-story-web.mp4" autoPlay muted loop controls playsInline preload="metadata" onPlaying={() => setStarted(true)} poster="/videos/lexicon-story-poster.jpg" tabIndex={0} aria-label="Lexicon promotional video, 57 seconds" aria-describedby="story-caption" onError={() => setError(true)} />
-        {!started && <button className="story-play" onClick={start} aria-label="Watch Lexicon in action, 57 seconds"><span className="story-play-icon"><Play size={26} /></span><span>Watch Lexicon in action<small>57 sec · Starts muted</small></span></button>}
+        <video ref={video} src="/videos/lexycon-story-web.mp4" autoPlay muted loop controls playsInline preload="metadata" onPlaying={() => setStarted(true)} poster="/videos/lexycon-story-poster.jpg" tabIndex={0} aria-label="Lexycon promotional video, 57 seconds" aria-describedby="story-caption" onError={() => setError(true)} />
+        {!started && <button className="story-play" onClick={start} aria-label="Watch Lexycon in action, 57 seconds"><span className="story-play-icon"><Play size={26} /></span><span>Watch Lexycon in action<small>57 sec · Starts muted</small></span></button>}
       </div>
       <figcaption id="story-caption">A little less overwhelm. A little more clarity.</figcaption>
-      {error && <p role="status">Having trouble playing? <a href="/videos/lexicon-story-web.mp4">Open the video directly</a>.</p>}
+      {error && <p role="status">Having trouble playing? <a href="/videos/lexycon-story-web.mp4">Open the video directly</a>.</p>}
     </figure>
   </section>;
 }

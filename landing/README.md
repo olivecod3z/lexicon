@@ -1,6 +1,6 @@
-# Lexicon landing page
+# Lexycon landing page
 
-The existing Lexicon marketing site, imported from the standalone landing-page project. It uses Next.js, Manrope and DM Sans, with bundled images and fonts.
+The existing Lexycon marketing site, imported from the standalone landing-page project. It uses Next.js, Manrope and DM Sans, with bundled images and fonts.
 
 ## Local development
 

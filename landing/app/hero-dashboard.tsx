@@ -55,7 +55,7 @@ export default memo(function HeroDashboard() {
   }, [showingQuiz, reduced, visible, pageVisible]);
   return <div role="group" ref={preview} className={`dashboard-peek refined-dashboard dash-demo phase-${reduced ? 0 : phase} ${!playing ? 'demo-paused' : ''}`} aria-label="Sample dashboard: a student opens a practice question, selects the correct answer, and sees their progress update">
     <aside className="dash-sidebar">
-      <span className="dash-brand"><span><Layers size={17} /></span>lexicon.</span>
+      <span className="dash-brand"><span><Layers size={17} /></span>lexycon.</span>
       <div className="dash-workspace"><span className="dash-avatar">Jo</span><div>Your workspace<small>Personal account</small></div><ChevronRight size={12} /></div>
       <span className="dash-label">Workspace</span>
       <div className="dash-navigation">

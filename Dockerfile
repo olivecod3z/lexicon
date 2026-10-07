@@ -6,9 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /service
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt \
-    && useradd --create-home --uid 10001 lexicon \
-    && chown lexicon:lexicon /service
-COPY --chown=lexicon:lexicon app/ ./app/
-USER lexicon
+    && useradd --create-home --uid 10001 lexycon \
+    && chown lexycon:lexycon /service
+COPY --chown=lexycon:lexycon app/ ./app/
+USER lexycon
 EXPOSE 8080
 CMD ["sh", "-c", "exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

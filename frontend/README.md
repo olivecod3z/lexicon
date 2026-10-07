@@ -1,4 +1,4 @@
-# Lexicon frontend
+# Lexycon frontend
 
 The dashboard prioritizes PDF upload, your saved lecture library, and the three
 connected tools: study notes, flashcards, and mixed practice.

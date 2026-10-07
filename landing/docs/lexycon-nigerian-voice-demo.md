@@ -1,4 +1,4 @@
-# Lexicon Nigerian voice demo
+# Lexycon Nigerian voice demo
 
 Produced September 23, 2026.
 
@@ -9,7 +9,7 @@ Produced September 23, 2026.
 
 ## Production
 
-18.4-second portrait product demo, exported at 2160 × 3840, 25 fps, H.264. The sample UI uses existing DPR2 screenshots, enlarged for this export; the source capture is not native 4K. Manrope typography, Lexicon ribbons, a moving cursor, and timed phrase captions accompany notes, flashcards, and quiz states.
+18.4-second portrait product demo, exported at 2160 × 3840, 25 fps, H.264. The sample UI uses existing DPR2 screenshots, enlarged for this export; the source capture is not native 4K. Manrope typography, Lexycon ribbons, a moving cursor, and timed phrase captions accompany notes, flashcards, and quiz states.
 
 Voice: Ezinne, Nigerian English (`en-NG`), generated through SpeechGen at normal speed and pitch. Narration duration: 17.256 seconds.
 
@@ -17,7 +17,7 @@ This version uses off-screen narration without a talking avatar. The desired rep
 
 ## Narration
 
-Reading the same page again? Abeg, try testing yourself. Here's what I like about Lexicon: the notes get to the point, then the flashcards make you think. Try an answer, flip the card, and check what you missed. There's a quick quiz too. Try the sample and see what sticks.
+Reading the same page again? Abeg, try testing yourself. Here's what I like about Lexycon: the notes get to the point, then the flashcards make you think. Try an answer, flip the card, and check what you missed. There's a quick quiz too. Try the sample and see what sticks.
 
 ## Scene timing
 

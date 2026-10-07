@@ -1,4 +1,4 @@
-"""Text extraction for the document formats supported by Lexicon."""
+"""Text extraction for the document formats supported by Lexycon."""
 
 from io import BytesIO
 from pathlib import Path

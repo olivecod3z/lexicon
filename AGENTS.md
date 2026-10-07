@@ -1,9 +1,9 @@
-# Lexicon — Codex Project Instructions
+# Lexycon — Codex Project Instructions
 
 ## Mission
-Build Lexicon with me, not merely for me.
+Build Lexycon with me, not merely for me.
 
-Lexicon is an AI-powered SaaS for university students. It turns lecture materials into an adaptive study system:
+Lexycon is an AI-powered SaaS for university students. It turns lecture materials into an adaptive study system:
 
 **Upload → Learn → Test → Improve**
 
@@ -27,7 +27,7 @@ Use this learning loop:
 
 When introducing an unfamiliar concept:
 1. Explain what it is in plain English.
-2. Explain why Lexicon needs it.
+2. Explain why Lexycon needs it.
 3. Give a small example when useful.
 4. Show how it connects to the current feature.
 5. Then implement it.
@@ -37,7 +37,7 @@ If I say I do not understand something, stop and teach that concept before conti
 ## Codex Behavior
 Before changing code:
 1. Inspect the repository.
-2. Read this file and `Lexicon_Codex_Project_Brief.md`.
+2. Read this file and `Lexycon_Codex_Project_Brief.md`.
 3. Understand the existing architecture.
 4. State the proposed milestone briefly.
 5. Implement one coherent milestone.
@@ -109,7 +109,7 @@ Do not build future infrastructure prematurely.
 - Do not permanently store sensitive student content without a product reason.
 
 ## AI Quality
-Lexicon must not blindly trust model output.
+Lexycon must not blindly trust model output.
 
 For educational generation:
 - Preserve source fidelity.
@@ -121,7 +121,7 @@ For educational generation:
 - Retrieval-based answers should be grounded in the student's material when the feature is explicitly source-based.
 
 ## Product Principle
-Lexicon is NOT merely:
+Lexycon is NOT merely:
 > "Upload a PDF and get an AI summary."
 
 The product should become:
@@ -153,7 +153,7 @@ Keep explanations concise unless I ask for more depth.
 ## First Task
 When this project is opened for the first time:
 1. Inspect the repository.
-2. Read `Lexicon_Codex_Project_Brief.md`.
+2. Read `Lexycon_Codex_Project_Brief.md`.
 3. Tell me what already exists.
 4. Identify missing prerequisites.
 5. Propose the smallest first milestone.

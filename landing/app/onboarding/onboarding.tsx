@@ -63,7 +63,7 @@ async function ensureFirstCourse(profile: Profile) {
   if (!user) throw new Error('Your sign-in session has expired. Please sign in again.');
   const headers = { Authorization: `Bearer ${await user.getIdToken()}` };
   const existing = await fetch(`${API_BASE_URL}/courses`, { headers });
-  if (!existing.ok) throw new Error('Lexicon could not open your study space. Please try again.');
+  if (!existing.ok) throw new Error('Lexycon could not open your study space. Please try again.');
   const courses = await existing.json();
   if (courses.length) return;
   const response = await fetch(`${API_BASE_URL}/courses`, {
@@ -73,7 +73,7 @@ async function ensureFirstCourse(profile: Profile) {
   });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    throw new Error(typeof data?.detail === 'string' ? data.detail : 'Lexicon could not save your first course. Please try again.');
+    throw new Error(typeof data?.detail === 'string' ? data.detail : 'Lexycon could not save your first course. Please try again.');
   }
 }
 
@@ -190,7 +190,7 @@ export default function Onboarding() {
       shouldFocus.current = true;
       setComplete(true);
     } catch (error) {
-      setFinishError(error instanceof Error ? error.message : 'Lexicon could not save your setup. Please try again.');
+      setFinishError(error instanceof Error ? error.message : 'Lexycon could not save your setup. Please try again.');
     } finally {
       setIsFinishing(false);
     }
@@ -223,7 +223,7 @@ export default function Onboarding() {
     <div className="onboarding-shell">
       <a className="setup-skip-link" href="#setup-main">Skip to setup</a>
       <header className="setup-header">
-        <Link className="setup-brand" href="/" aria-label="Lexicon home"><Layers size={22} /><span>lexicon<span className="setup-dot">.</span></span></Link>
+        <Link className="setup-brand" href="/" aria-label="Lexycon home"><Layers size={22} /><span>lexycon<span className="setup-dot">.</span></span></Link>
         <span className="setup-header-label">A little clearer, every day.</span>
         <Link className="setup-exit" href="/"><ChevronLeft size={16} /> Back to home</Link>
       </header>
@@ -291,7 +291,7 @@ export default function Onboarding() {
               </> : <form noValidate onSubmit={handleSubmit}>
                 <div className="setup-step-meta"><span className="setup-eyebrow">Your study setup</span><span>Step {step + 1} of 3</span></div>
                 <h1 ref={heading} tabIndex={-1}>{['First, a little about you.', 'What brings you here?', 'What are you studying?'][step]}</h1>
-                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Tell us the degree, programme or course you want Lexicon to support first.'][step]}</p>
+                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Tell us the degree, programme or course you want Lexycon to support first.'][step]}</p>
 
                 {step === 0 && <div className="setup-fields">
                   <div className="setup-field">
@@ -353,7 +353,7 @@ export default function Onboarding() {
                 {step === 2 && <>{finishError && <p className="setup-field-error" role="alert">{finishError}</p>}<button type="button" className="setup-skip-course" disabled={isFinishing} onClick={() => void finish(true)}>Skip for now</button></>}
               </form>}
               </div>
-              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your setup could not be saved in this browser. You can continue, but keep this tab open.' : 'Your preferences stay in this browser and your first course is saved to your private Lexicon account.'}</p>
+              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your setup could not be saved in this browser. You can continue, but keep this tab open.' : 'Your preferences stay in this browser and your first course is saved to your private Lexycon account.'}</p>
             </div>
           )}
         </main>
