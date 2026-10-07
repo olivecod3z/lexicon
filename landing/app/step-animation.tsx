@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 import usePageVisible from './use-page-visible';
-import { ArrowUp, BookOpen, Check, FileText, Layers, MousePointer2, Pause, Play, Zap } from './icons';
+import { ArrowUp, BookOpen, Check, FileText, Layers, MousePointer2, Zap } from './icons';
 
 type Step = 'upload' | 'generate' | 'improve';
 const descriptions = {
@@ -11,18 +11,17 @@ const descriptions = {
   improve: 'A practice answer is checked, then learning progress grows.',
 };
 
-export default memo(function StepAnimation({ type }: { type: Step }) {
+export default memo(function StepAnimation({ type, suspended = false }: { type: Step; suspended?: boolean }) {
   const pageVisible = usePageVisible();
   const container = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const [paused, setPaused] = useState(false);
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.15 });
     if (container.current) observer.observe(container.current);
     return () => observer.disconnect();
   }, []);
 
-  return <div ref={container} className={`step-motion motion-${type} ${paused || !visible || !pageVisible ? 'motion-paused' : ''}`}>
+  return <div ref={container} className={`step-motion motion-${type} ${suspended || !visible || !pageVisible ? 'motion-paused' : ''}`}>
     <div className="motion-scene" role="img" aria-label={descriptions[type]}>
       {type === 'upload' && <>
         <div className="motion-halo" />
@@ -45,6 +44,5 @@ export default memo(function StepAnimation({ type }: { type: Step }) {
         <div className="progress-mini"><div className="progress-heading"><span>A little clearer.</span><span className="progress-badge"><Check size={10} /> Got it</span></div><div className="animated-bars">{[0, 1, 2, 3, 4, 5].map(n => <i key={n} style={{ '--bar': n } as React.CSSProperties} />)}</div><div className="progress-baseline" /></div>
       </>}
     </div>
-    <button className="motion-control" onClick={() => setPaused(!paused)} aria-label={`${paused ? 'Play' : 'Pause'} ${type} animation`} aria-pressed={paused}>{paused ? <Play size={12} /> : <Pause size={12} />}</button>
   </div>;
 });
