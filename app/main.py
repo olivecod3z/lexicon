@@ -48,6 +48,7 @@ from app.practice import PracticeGenerationError, PracticeSet, PracticeSubmissio
 from app.study_packs import StudyPack, StudyPackGenerationError, generate_study_pack
 from app.text_chunks import TextChunkingError
 from app.generation_access import GenerationAccessError, generate_for_account, usage_summary
+from app.profiles import StudyProfile, read_profile, write_profile
 
 MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024
 TEXT_PREVIEW_LENGTH = 500
@@ -92,6 +93,22 @@ def get_usage(user: AuthenticatedUser = Depends(current_user)):
         return usage_summary(user.uid)
     except MaterialStorageError as error:
         raise HTTPException(503, "Usage checking is unavailable. Please try again later.") from error
+
+
+@app.get('/account/profile')
+def get_profile(user: AuthenticatedUser = Depends(current_user)):
+    try:
+        return {'profile': read_profile(user.uid)}
+    except Exception as error:
+        raise HTTPException(503, 'Your study profile could not be loaded. Please try again.') from error
+
+
+@app.post('/account/profile')
+def save_profile(data: StudyProfile, user: AuthenticatedUser = Depends(current_user)):
+    try:
+        return {'profile': write_profile(user.uid, data)}
+    except Exception as error:
+        raise HTTPException(503, 'Your study profile could not be saved. Please try again.') from error
 
 
 class ExtractionResponse(BaseModel):
