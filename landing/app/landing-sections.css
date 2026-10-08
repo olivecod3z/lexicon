@@ -565,3 +565,5 @@ h1, h2, h3, h4,
 .revision-next{padding-top:15px}.revision-next small{font-size:9px;color:#819075}.revision-next strong{display:block;font-size:12px;font-weight:500;margin-top:6px;color:#34442b}.revision-next p{font-size:10px;color:#7b8870;margin:5px 0 0}
 @media(max-width:800px){.focus-feature-copy{padding:24px 22px 0;min-height:172px}.focus-feature-copy h3{font-size:20px}.focus-feature-art{padding:22px 18px 32px}.course-preview,.revision-preview{padding:16px 13px}.focus-course strong{font-size:10px}.revision-topic{font-size:10px;gap:5px}.revision-status{font-size:8px}}
 @media(max-width:600px){.focus-feature-grid{grid-template-columns:1fr;gap:20px}.focus-feature-copy{min-height:0;padding:25px 24px 8px}.focus-feature-copy h3{font-size:22px}.focus-feature-art{min-height:295px;padding:24px 24px 35px}.focus-course strong{font-size:11px}.focus-feature-art::before{background-size:145% auto}.revision-art::before{background-size:160% auto}}
+
+.pricing-pro{border-color:#617851}.pricing-pro .pricing-card-top{background:#edf2e8}.pricing-card .button:disabled{opacity:.65;cursor:not-allowed}

@@ -44,10 +44,11 @@ from app.quizzes import (
     quiz_for_student,
     score_quiz,
 )
-from app.practice import PracticeGenerationError, PracticeSet, PracticeSubmission, PracticeResult, generate_practice, score_practice
+from app.practice import PracticeGenerationError, PracticeSet, PracticeSubmission, PracticeResult, generate_practice, score_practice, PracticeOptions, source_sections
 from app.study_packs import StudyPack, StudyPackGenerationError, generate_study_pack
 from app.text_chunks import TextChunkingError
 from app.generation_access import GenerationAccessError, generate_for_account, usage_summary
+from app.entitlements import account_plan, public_entitlements
 from app.profiles import StudyProfile, read_profile, write_profile
 
 MAX_UPLOAD_SIZE_BYTES = 25 * 1024 * 1024
@@ -83,6 +84,11 @@ def generate_resource(user, source, kind, model_type, generate):
         return generate_for_account(user.uid, source, kind, model_type, generate)
     except MaterialStorageError as error:
         raise GenerationAccessError("Usage checking is unavailable. Please try again later.", 503) from error
+
+
+@app.get("/account/entitlements")
+def get_entitlements(user: AuthenticatedUser = Depends(current_user)):
+    return public_entitlements()
 
 
 @app.get("/account/usage")
@@ -455,18 +461,33 @@ def create_mcqs_from_saved_material(material_id: str, user: AuthenticatedUser = 
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 
+@app.get("/materials/{material_id}/practice-sections")
+def get_practice_sections(material_id: str, user: AuthenticatedUser = Depends(current_user)):
+    material = load_material_or_404(user.uid, material_id)
+    return [{"id": i + 1, "label": f"Source section {i + 1}: {section[:90]}", "characters": len(section)}
+            for i, section in enumerate(source_sections(material.source_text))]
+
+
 @app.post("/materials/{material_id}/practice", response_model=PracticeSet)
-def create_mixed_practice(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> PracticeSet:
+def create_mixed_practice(material_id: str, user: AuthenticatedUser = Depends(current_user), options: PracticeOptions | None = None) -> PracticeSet:
     """Generate MCQ, keyword-recall, and theory practice from one material."""
     material = load_material_or_404(user.uid, material_id)
     try:
-        return generate_resource(user, material.source_text, "practice", PracticeSet, generate_practice)
+        options = options or PracticeOptions()
+        try:
+            options.validate_plan(account_plan())
+            if options.coverage == "selected" and max(options.selected_sections) > len(source_sections(material.source_text)):
+                raise ValueError("Selected source sections are invalid. Reload the section list.")
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        provider = generate_practice if options == PracticeOptions() else lambda source: generate_practice(source, options)
+        return generate_resource(user, material.source_text, options.cache_kind(), PracticeSet, provider)
     except (PracticeGenerationError, TextChunkingError) as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
 @app.post("/materials/{material_id}/practice-session")
-def create_practice_session(material_id: str, user: AuthenticatedUser = Depends(current_user)) -> dict:
-    practice = create_mixed_practice(material_id, user)
+def create_practice_session(material_id: str, user: AuthenticatedUser = Depends(current_user), options: PracticeOptions | None = None) -> dict:
+    practice = create_mixed_practice(material_id, user, options)
     practice_id = str(uuid4())
     if HOSTED:
         try:
@@ -484,7 +505,10 @@ def submit_practice(practice_id: str, submission: PracticeSubmission, user: Auth
     except MaterialStorageError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
     if practice is None: raise HTTPException(status_code=404, detail="Practice set not found.")
-    return score_practice(practice, submission)
+    try:
+        return score_practice(practice, submission)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @app.post("/materials/{material_id}/quizzes", response_model=QuizForStudent, status_code=status.HTTP_201_CREATED)

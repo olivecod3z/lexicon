@@ -1,0 +1,20 @@
+{
+  "Free": {
+    "monthly_price": 0,
+    "packs_per_month": 3,
+    "practice_questions": 10,
+    "custom_practice": false
+  },
+  "Student": {
+    "monthly_price": 3000,
+    "packs_per_month": 30,
+    "practice_questions": 30,
+    "custom_practice": true
+  },
+  "Pro": {
+    "monthly_price": 7000,
+    "packs_per_month": 75,
+    "practice_questions": 60,
+    "custom_practice": true
+  }
+}

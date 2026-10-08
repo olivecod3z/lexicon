@@ -9,6 +9,7 @@ RUN python -m pip install --no-cache-dir -r requirements.txt \
     && useradd --create-home --uid 10001 lexycon \
     && chown lexycon:lexycon /service
 COPY --chown=lexycon:lexycon app/ ./app/
+COPY --chown=lexycon:lexycon shared/plan-policy.json ./shared/plan-policy.json
 USER lexycon
 EXPOSE 8080
 CMD ["sh", "-c", "exec python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
