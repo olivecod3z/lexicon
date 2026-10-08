@@ -3,6 +3,7 @@ import { api } from './api'
 import Icon from './components/Icon'
 import AuthGate, { SignOutButton } from './components/AuthGate'
 import LibraryState from './components/LibraryState'
+import StudyLoading from './components/StudyLoading'
 import UploadCard from './components/UploadCard'
 import Practice from './components/Practice'
 import AccountAllowance from './components/AccountAllowance'
@@ -174,7 +175,7 @@ function StudyDashboard() {
     return <section className="materials-section"><div className="section-heading"><h2>{limit ? 'Your recent materials' : 'Your materials'}</h2>{limit && materials.length > limit && <button className="text-button" onClick={() => navigate('materials')}>View all <Icon name="arrow" /></button>}</div>{loadingLibrary && <p className="muted" role="status">Loading your library…</p>}{libraryError && <LibraryState unavailable onRetry={reloadLibrary} loading={loadingLibrary} />}{materials.length ? <div className="material-list">{materials.slice(0, limit || materials.length).map(item => <article className="material-row" key={item.id}><span className="file-symbol"><Icon name="file" /></span><div><h3>{item.filename}</h3><p>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {resources[item.id]?.notes ? 'Notes ready' : 'Ready to study'}{resources[item.id]?.cards ? ' · Flashcards ready' : ''}</p></div><button className="button secondary" disabled={busy} onClick={() => openMaterial(item)}>Open <Icon name="arrow" /></button></article>)}</div> : !loadingLibrary && !libraryError && <LibraryState />}</section>
   }
 
-  if (loadingLibrary) return <main className="auth-page"><p role="status">Opening your study space…</p></main>
+  if (loadingLibrary) return <StudyLoading />
   if (libraryError) return <main className="auth-page"><section className="auth-card"><h1>Let’s reconnect your study space</h1><p role="alert">{libraryError}</p><button className="button primary" onClick={() => { setLoadingLibrary(true); setLibraryError(''); setStartupAttempt(value => value + 1) }}>Try again</button><SignOutButton /></section></main>
   if (setupOpen || !profile?.onboarding_complete) return <OriginalOnboarding
     savedProfile={profile} existingCourse={courses[0]}
