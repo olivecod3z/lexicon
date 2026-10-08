@@ -257,7 +257,7 @@ button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-v
   height: 100%;
   transform-style: preserve-3d;
   transform: rotateY(0deg);
-  transition: transform 720ms cubic-bezier(.37, 0, .63, 1);
+  transition: transform 620ms var(--ease-spring);
 }
 .step-flip-card[data-near-viewport="true"] :is(.step-card-turn, .step-card-front, .step-card-back) { will-change: transform; }
 .step-flip-card[data-flipped="true"] .step-card-turn { transform: rotateY(180deg); }

@@ -242,7 +242,7 @@ export default function InitialOnboarding({
     return <section className="initial-onboarding" aria-labelledby={`${idPrefix}-complete-title`}>
       <div className="initial-onboarding__card initial-onboarding__success" aria-live="polite">
         <span className="initial-onboarding__success-mark" aria-hidden="true">✓</span>
-        <p className="eyebrow">STUDY SPACE READY</p>
+        <p className="eyebrow">Study space ready</p>
         <h2 id={`${idPrefix}-complete-title`} ref={headingRef} tabIndex="-1">You’re ready to begin, {profile.firstName.trim()}.</h2>
         <p>Your course and study preferences have been saved for this browser.</p>
       </div>
@@ -253,7 +253,7 @@ export default function InitialOnboarding({
     <div className="initial-onboarding__card">
       <div className="initial-onboarding__header">
         <div>
-          <p className="eyebrow">WELCOME TO LEXYCON</p>
+          <p className="eyebrow">Welcome to Lexycon</p>
           <h2 id={`${idPrefix}-title`} ref={headingRef} tabIndex="-1">{stepTitle}</h2>
         </div>
         <span className="initial-onboarding__step-count">Step {step} of 3</span>
@@ -352,7 +352,7 @@ export default function InitialOnboarding({
             <div className="initial-onboarding__field-grid">
               <label className="initial-onboarding__field">
                 <span>Course code <em>Optional</em></span>
-                <input maxLength="16" value={profile.courseCode} onChange={event => updateProfile('courseCode', event.target.value)} placeholder="e.g. CSC 201" />
+                <input maxLength="16" value={profile.courseCode} onChange={event => updateProfile('courseCode', event.target.value)} placeholder="e.g. csc 201" />
               </label>
               <label className="initial-onboarding__field">
                 <span>Course level <em>Optional</em></span>

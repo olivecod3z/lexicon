@@ -17,7 +17,7 @@ const goals = [
 ] as const;
 const colors = [
   { id: 'green', label: 'Leaf', value: '#d9edc6', ink: '#38532c' },
-  { id: 'blue', label: 'Sky', value: '#dcebf6', ink: '#34536d' },
+  { id: 'blue', label: 'Sage', value: '#e0ead8', ink: '#405c35' },
   { id: 'rose', label: 'Rose', value: '#f7dfe2', ink: '#7d424b' },
   { id: 'yellow', label: 'Sunshine', value: '#f5ecc5', ink: '#6d5b25' },
 ] as const;
@@ -330,9 +330,9 @@ export default function Onboarding() {
 
                 {step === 2 && <>
                   <div className="setup-fields">
-                    <div className="setup-field"><label htmlFor="setup-course">Degree, programme or course</label><input id="setup-course" name="course" value={profile.course} onChange={event => update('course', event.target.value)} maxLength={100} placeholder="e.g. BSc Computer Science or PSY 101" required aria-invalid={Boolean(errors.course)} aria-describedby={errors.course ? 'course-error' : undefined} />{errors.course && <p id="course-error" className="setup-field-error" role="alert">{errors.course}</p>}</div>
+                    <div className="setup-field"><label htmlFor="setup-course">Degree, programme or course</label><input id="setup-course" name="course" value={profile.course} onChange={event => update('course', event.target.value)} maxLength={100} placeholder="e.g. BSc Computer Science or psy 101" required aria-invalid={Boolean(errors.course)} aria-describedby={errors.course ? 'course-error' : undefined} />{errors.course && <p id="course-error" className="setup-field-error" role="alert">{errors.course}</p>}</div>
                     <div className="setup-course-options">
-                      <div className="setup-field"><label htmlFor="setup-course-code">Programme or course code <span>Optional</span></label><input id="setup-course-code" name="course-code" value={profile.courseCode} onChange={event => update('courseCode', event.target.value)} maxLength={16} placeholder="e.g. CSC 201" /></div>
+                      <div className="setup-field"><label htmlFor="setup-course-code">Programme or course code <span>Optional</span></label><input id="setup-course-code" name="course-code" value={profile.courseCode} onChange={event => update('courseCode', event.target.value)} maxLength={16} placeholder="e.g. csc 201" /></div>
                       <fieldset className="setup-colors"><legend>Study space color</legend><div>{colors.map(color => <label key={color.id} title={color.label} style={{ background: color.value, color: color.ink }} className={profile.color === color.id ? 'is-selected' : ''}>
                         <input type="radio" name="course-color" value={color.id} checked={profile.color === color.id} onChange={() => update('color', color.id)} aria-label={color.label} />{profile.color === color.id && <Check size={18} />}
                       </label>)}</div></fieldset>

@@ -35,11 +35,11 @@ export default function AccountAllowance({ refreshKey }) {
   return <section className="allowance-card" aria-label="Your plan and allowance">
     <div><strong>{usage?.plan || 'Your plan'}{usage?.packs_limit != null && ` · ${Math.max(0, usage.packs_limit - usage.packs_used)} of ${usage.packs_limit} learning packs left`}</strong>
       <p>One lecture’s notes, flashcards and practice count as one pack. Reopen saved resources without using another pack.</p>
-      {usage?.resets_at && <p>Allowance resets {new Date(usage.resets_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })} (UTC). Student and Pro subscriptions are not open yet.</p>}
+      {usage?.resets_at && <p>Allowance resets {new Date(usage.resets_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' })} (utc). Student and Pro subscriptions are not open yet.</p>}
       {error && <p role="status">{error}</p>}
     </div>
     <a className="text-button" href="https://lexycon.site/#pricing" target="_blank" rel="noreferrer">Explore planned packages ↗</a>
-    {!verified && <div className="email-verification"><p>Verify your email to create AI resources. Your saved work remains available.</p><button className="button secondary" disabled={busy} onClick={() => verify(false)}>Send verification email</button> <button className="text-button" disabled={busy} onClick={() => verify(true)}>I’ve verified my email</button></div>}
+    {!verified && <div className="email-verification"><p>Verify your email to create ai resources. Your saved work remains available.</p><button className="button secondary" disabled={busy} onClick={() => verify(false)}>Send verification email</button> <button className="text-button" disabled={busy} onClick={() => verify(true)}>I’ve verified my email</button></div>}
     {message && <p role="status">{message}</p>}
   </section>
 }

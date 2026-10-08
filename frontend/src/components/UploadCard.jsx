@@ -8,12 +8,12 @@ export default function UploadCard({ onUpload, busy }) {
     onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget)) setDragging(false) }}
     onDrop={event => { event.preventDefault(); setDragging(false); if (!busy) onUpload(event.dataTransfer.files[0]) }}>
     <div className="upload-symbol"><Icon name="upload" /></div>
-    <h3>{busy ? 'Please wait…' : 'Upload a lecture PDF'}</h3>
-    <p>{busy ? 'Finishing your current request.' : 'Drag and drop your PDF here, or choose a file.'}</p>
+    <h3>{busy ? 'Please wait…' : 'Upload a lecture pdf'}</h3>
+    <p>{busy ? 'Finishing your current request.' : 'Drag and drop your pdf here, or choose a file.'}</p>
     <label className={`button primary file-picker ${busy ? 'disabled' : ''}`}>
-      <input type="file" aria-label="Upload PDF or lecture material" accept=".pdf,.docx,.pptx,.txt" disabled={busy} onChange={event => { onUpload(event.target.files[0]); event.target.value = '' }} />
-      <Icon name="upload" /> {busy ? 'Please wait…' : 'Upload PDF'}
+      <input type="file" aria-label="Upload pdf or lecture material" accept=".pdf,.docx,.pptx,.txt" disabled={busy} onChange={event => { onUpload(event.target.files[0]); event.target.value = '' }} />
+      <Icon name="upload" /> {busy ? 'Please wait…' : 'Upload pdf'}
     </label>
-    <small>Up to 25 MB · Also accepts DOCX, PPTX and TXT</small>
+    <small>Up to 25 megabytes · Also accepts docx, pptx and txt</small>
   </section>
 }
