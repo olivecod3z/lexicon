@@ -1,30 +1,37 @@
 import { useEffect, useRef, useState } from 'react'
-import { api, browserLibrary } from './api'
+import { api } from './api'
 import Icon from './components/Icon'
-import { readSetup, saveSetup } from './onboarding-data'
+import AuthGate, { SignOutButton } from './components/AuthGate'
+import LibraryState from './components/LibraryState'
+import StudyLoading from './components/StudyLoading'
 import UploadCard from './components/UploadCard'
 import Practice from './components/Practice'
-import DocumentReader from './components/DocumentReader'
+import AccountAllowance from './components/AccountAllowance'
+import TodayRecall from './components/TodayRecall'
 import { StudyNotes, FlashcardReview, GenerateResource } from './components/StudyResources'
+import OriginalOnboarding from './components/OriginalOnboarding'
+
 import './App.css'
 import './components/Practice.css'
-import '../../shared/design-system.css'
-import './design-system.css'
 
+const navigation = [['overview', 'home', 'Dashboard'], ['recall', 'layers', "Today's recall"], ['materials', 'book', 'My materials'], ['study', 'layers', 'Study workspace'], ['progress', 'progress', 'My progress']]
+const tabs = [['notes', 'file', 'Study notes'], ['cards', 'layers', 'Flashcards'], ['practice', 'practice', 'Practice & quiz']]
 
-const navigation = [['overview', 'home', 'Dashboard'], ['materials', 'book', 'My materials'], ['study', 'layers', 'Study workspace'], ['progress', 'progress', 'My progress']]
-const tabs = [...(browserLibrary ? [['document', 'file', 'Original lecture']] : []), ['notes', 'file', 'Study notes'], ['cards', 'layers', 'Flashcards'], ['practice', 'practice', 'Practice & quiz']]
-
-export default function App() {
-  const [onboarding] = useState(() => new URLSearchParams(window.location.search).has('onboarding'))
-  const [setup, setSetup] = useState(readSetup)
+function StudyDashboard() {
+  const [profile, setProfile] = useState(null)
+  const [setupOpen, setSetupOpen] = useState(false)
+  const [startupAttempt, setStartupAttempt] = useState(0)
   const [view, setView] = useState('overview')
-  const [tab, setTab] = useState(browserLibrary ? 'document' : 'notes')
+  const [tab, setTab] = useState('notes')
   const [mobileOpen, setMobileOpen] = useState(false)
   const [materials, setMaterials] = useState([])
+  const [courses, setCourses] = useState([])
+  const [selectedCourseId, setSelectedCourseId] = useState(null)
   const [selectedId, setSelectedId] = useState(null)
   // Keep each lecture's generated resources and answers together when switching views.
-  const [resources, setResources] = useState(() => readSetup().resources || {})
+  const [resources, setResources] = useState({})
+  const [reviewCards, setReviewCards] = useState([])
+  const [recallProgress, setRecallProgress] = useState({ reviewed_today: 0, current_streak: 0 })
   const [loadingLibrary, setLoadingLibrary] = useState(true)
   const [libraryError, setLibraryError] = useState('')
   const [notice, setNotice] = useState(null)
@@ -32,6 +39,7 @@ export default function App() {
   const heading = useRef(null)
   const uploadInput = useRef(null)
   const busy = !!pending
+  const selectedCourse = courses.find(course => course.id === selectedCourseId)
   const material = materials.find(item => item.id === selectedId)
   const current = resources[selectedId] || {}
   const practice = current.session?.practice
@@ -41,23 +49,19 @@ export default function App() {
   const result = current.result
 
   useEffect(() => {
-    if (onboarding) window.location.replace('/onboarding?edit=1')
-  }, [onboarding])
-
-  useEffect(() => {
-    if (!setup.completed) return
-    try { saveSetup(setup) }
-    catch (error) { setNotice({ error: true, text: error.message }) }
-  }, [setup])
-
-  useEffect(() => {
     let active = true
-    api('/materials').then(items => {
+    Promise.all([api('/account/profile'), api('/courses'), api('/materials'), api('/reviews/today'), api('/reviews/progress')]).then(([account, savedCourses, items, dueCards, progress]) => {
       if (!active) return
+      setProfile(account.profile)
+      setSetupOpen(!account.profile?.onboarding_complete)
+      setCourses(savedCourses)
+      setSelectedCourseId(savedCourses[0]?.id || null)
       setMaterials(previous => [...previous, ...items.filter(item => !previous.some(existing => existing.id === item.id))])
+      setReviewCards(dueCards)
+      setRecallProgress(progress)
     }).catch(error => { if (active) setLibraryError(error.message) }).finally(() => { if (active) setLoadingLibrary(false) })
     return () => { active = false }
-  }, [])
+  }, [startupAttempt])
 
   useEffect(() => {
     const closeMenu = event => { if (event.key === 'Escape') setMobileOpen(false) }
@@ -66,20 +70,14 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (!mobileOpen) return
-    const menu = document.querySelector('.mobile-menu')
-    const sidebar = document.querySelector('.sidebar')
-    sidebar?.querySelector('a, button')?.focus()
-    const trap = event => {
-      if (event.key !== 'Tab') return
-      const items = [...sidebar.querySelectorAll('a, button'), menu].filter(Boolean)
-      const first = items[0], last = items[items.length - 1]
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus() }
-      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus() }
-    }
-    document.addEventListener('keydown', trap)
-    return () => { document.removeEventListener('keydown', trap); menu?.focus() }
-  }, [mobileOpen])
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    // Animate the existing view without remounting forms or resetting study state.
+    const animation = heading.current?.animate([
+      { opacity: .65, transform: 'translate3d(0, 4px, 0)' },
+      { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+    ], { duration: 320, easing: 'cubic-bezier(.22, .68, .25, 1)' })
+    return () => animation?.cancel()
+  }, [view, tab])
 
   function navigate(next) {
     setView(next); setMobileOpen(false)
@@ -88,7 +86,7 @@ export default function App() {
   function updateResource(id, changes) {
     setResources(previous => ({ ...previous, [id]: { ...previous[id], ...changes } }))
   }
-  function openMaterial(item, nextTab = browserLibrary ? 'document' : view === 'study' ? tab : 'notes') {
+  function openMaterial(item, nextTab = view === 'study' ? tab : 'notes') {
     setSelectedId(item.id); setTab(nextTab); setNotice(null); navigate('study')
   }
   async function reloadLibrary() {
@@ -97,38 +95,44 @@ export default function App() {
     catch (error) { setLibraryError(error.message) }
     finally { setLoadingLibrary(false) }
   }
-  async function uploadFiles(files) {
-    if (busy) return
-    const items = Array.isArray(files) ? files : [files]
-    let saved = 0
-    for (const file of items) if (await uploadFile(file)) saved++
-    if (items.length > 1) setNotice({ error: saved !== items.length, text: `${saved} of ${items.length} lectures saved.${saved !== items.length ? ' Some files could not be read. Retry those files individually for details.' : ''}` })
+  async function reloadRecall() {
+    try {
+      const [cards, progress] = await Promise.all([api('/reviews/today'), api('/reviews/progress')])
+      setReviewCards(cards); setRecallProgress(progress)
+    }
+    catch (error) { setNotice({ error: true, text: error.message }) }
+  }
+  async function completeInitialSetup(answers) {
+    // A prior course save can succeed even if the profile save fails.
+    let savedCourses = await api('/courses')
+    if (!savedCourses.length) {
+      const course = await api('/courses', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: answers.course, code: answers.courseCode, color: answers.color, level: answers.level }),
+      })
+      savedCourses = [course]
+    }
+    setCourses(savedCourses)
+    setSelectedCourseId(savedCourses[0].id)
+    const { name, institution, stage, level, goals, minutes } = answers
+    const account = await api('/account/profile', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, institution, stage, level, goals, minutes }),
+    })
+    setProfile(account.profile)
   }
   async function uploadFile(file) {
     if (!file || busy) return
-    if (browserLibrary && !/\.(pdf|txt)$/i.test(file.name)) return setNotice({ error: true, text: 'Choose a pdf or utf-8 txt file.' })
+    if (!selectedCourseId) return setNotice({ error: true, text: 'Create your course before uploading a lecture.' })
     if (!/\.(pdf|docx|pptx|txt)$/i.test(file.name)) return setNotice({ error: true, text: 'Choose a pdf, docx, pptx or txt file.' })
     if (!file.size) return setNotice({ error: true, text: 'This file is empty. Please choose another file.' })
     if (file.size > 25 * 1024 * 1024) return setNotice({ error: true, text: 'Please choose a file that is 25 megabytes or smaller.' })
     setPending('upload'); setNotice({ text: 'Reading and saving your lecture…' })
     try {
-      const body = new FormData(); body.append('file', file)
-      const uploaded = await api('/materials', { method: 'POST', body, onProgress: text => setNotice({ text }) })
+      const body = new FormData(); body.append('file', file); body.append('course_id', selectedCourseId)
+      const uploaded = await api('/materials', { method: 'POST', body })
       setMaterials(previous => [uploaded, ...previous.filter(item => item.id !== uploaded.id)])
       openMaterial(uploaded)
-      return true
-    } catch (error) { setNotice({ error: true, text: error.message }) }
-    finally { setPending(null) }
-  }
-  async function removeFile(item) {
-    if (!window.confirm(`Remove "${item.filename}" from this browser library? Your original file on disk is not affected.`)) return
-    setPending('remove')
-    try {
-      await api(`/materials/${item.id}`, { method: 'DELETE' })
-      setMaterials(previous => previous.filter(value => value.id !== item.id))
-      const nextSetup = { ...setup, courses: (setup.courses || []).filter(course => course.materialId !== item.id), resources: { ...setup.resources } }; delete nextSetup.resources[item.id]; saveSetup(nextSetup); setSetup(nextSetup)
-      if (selectedId === item.id) { setSelectedId(null); navigate('materials') }
-      setNotice({ text: 'Lecture removed from this browser.' })
     } catch (error) { setNotice({ error: true, text: error.message }) }
     finally { setPending(null) }
   }
@@ -140,6 +144,7 @@ export default function App() {
     try {
       const data = await api(`/materials/${id}/${endpoint}`, { method: 'POST' })
       updateResource(id, { [type === 'practice' ? 'session' : type]: data })
+      if (type === 'cards') await reloadRecall()
       setNotice(null)
     } catch (error) { setNotice({ error: true, text: error.message }) }
     finally { setPending(null) }
@@ -154,16 +159,43 @@ export default function App() {
     } catch (error) { setNotice({ error: true, text: error.message }) }
     finally { setPending(null) }
   }
-
-  function renderLibrary(limit) {
-    return <section className="materials-section"><div className="section-heading"><h2>{limit ? 'Your recent materials' : 'Your materials'}</h2>{limit && materials.length > limit && <button className="text-button" onClick={() => navigate('materials')}>View all <Icon name="arrow" /></button>}</div>{loadingLibrary && <p className="muted" role="status">Loading your library…</p>}{libraryError && <div className="library-error" role="alert"><p>{libraryError}</p><button className="text-button" onClick={reloadLibrary} disabled={loadingLibrary}>Retry loading library</button></div>}{materials.length ? <div className="material-list">{materials.slice(0, limit || materials.length).map(item => <article className="material-row" key={item.id}><span className="file-symbol"><Icon name="file" /></span><div><h3>{item.filename}</h3><p>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {setup.courses?.find(course => course.materialId === item.id)?.name || 'Lecture'} · {resources[item.id]?.notes ? 'Notes ready' : 'Ready to study'}{resources[item.id]?.cards ? ' · Flashcards ready' : ''}</p></div><button className="button secondary" disabled={busy} onClick={() => openMaterial(item)}>Open <Icon name="arrow" /></button>{browserLibrary && <button className="text-button" disabled={busy} aria-label={`Remove ${item.filename}`} onClick={() => removeFile(item)}>Remove</button>}</article>)}</div> : !loadingLibrary && !libraryError && <div className="empty-materials"><Icon name="book" /><div><h3>No lectures uploaded yet</h3><p>Your uploaded materials will appear here.</p></div></div>}</section>
+  async function rateRecallCard(cardId, rating) {
+    if (busy) return
+    setPending('review')
+    try {
+      await api(`/reviews/${cardId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rating }) })
+      setReviewCards(cards => cards.filter(card => card.id !== cardId))
+      setRecallProgress(await api('/reviews/progress'))
+      setNotice(null)
+    } catch (error) { setNotice({ error: true, text: error.message }) }
+    finally { setPending(null) }
   }
 
-  if (onboarding) return <p role="status">Opening your study setup...</p>
-  return <div className="workspace focused-workspace"><a className="skip-link" href="#main-content">Skip to content</a><aside className={`sidebar ${mobileOpen ? 'is-open' : ''}`}><a className="brand" href="#" onClick={event => { event.preventDefault(); navigate('overview') }}><Icon name="layers" /><span>lexycon.</span></a><p className="nav-caption">My workspace</p><nav aria-label="Main navigation">{navigation.map(([id, icon, label]) => <button key={id} className={view === id ? 'active' : ''} aria-current={view === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon name={icon} />{label}</button>)}</nav><div className="sidebar-bottom"><a className="text-button" href="/">Back to Lexycon home</a><p>Your study tools</p>{tabs.map(([id, icon, label]) => <button className="tool-link" key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} />{label}</button>)}</div></aside>{mobileOpen && <button tabIndex={-1} className="nav-scrim" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />}<div className="workspace-main"><header className="topbar"><button className="icon-button mobile-menu" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)}><Icon name={mobileOpen ? 'close' : 'menu'} /></button><div className="breadcrumb"><b>{navigation.find(item => item[0] === view)?.[2]}</b></div>{material && view === 'study' && <span className="current-file">{material.filename}</span>}<input ref={uploadInput} type="file" multiple hidden accept={browserLibrary ? ".pdf,.txt" : ".pdf,.docx,.pptx,.txt"} onChange={event => { uploadFiles(Array.from(event.target.files)); event.target.value = '' }} /><button className="button primary" disabled={busy} onClick={() => uploadInput.current?.click()}><Icon name="upload" />Upload pdf</button></header><main inert={mobileOpen} id="main-content" tabIndex="-1" ref={heading} className="main-content">{browserLibrary && <section className="hosting-preview" aria-label="Document storage information"><strong>Your private browser library</strong><p>Drop a pdf to read and save it on this device. Files stay in this browser, not in a cloud account. Clearing browser data removes them; keep your original copies.</p><a href="/#demo">Try the interactive sample study pack</a></section>}<div className={`status-message ${notice?.error ? 'error' : ''}`} role={notice?.error ? 'alert' : 'status'} hidden={!notice}>{notice?.text}</div>
-    {view === 'overview' && <><section className="onboarding-course-summary"><strong>{setup.name ? `${setup.name}’s study space` : 'Your study space'}</strong>{setup.courses?.length ? setup.courses.map(course => <p key={course.id}><Icon name="book" /> {course.name}{course.code ? ` · ${course.code}` : ''}</p>) : <p>Set up a course and explore your first lecture with a short guided introduction.</p>}<a className="text-button" href="/onboarding?edit=1">{setup.completed ? 'Edit study setup' : 'Set up my study space'} <Icon name="arrow" /></a></section><div className="page-heading"><div><h1>Your study dashboard</h1><p>{browserLibrary ? "Add your pdfs. Read your lectures. Keep them together." : "Upload a lecture. Study your notes. Test what you know."}</p></div></div><UploadCard onUpload={uploadFiles} busy={busy} browserLibrary={browserLibrary} /><div className="tool-overview">{tabs.map(([id, icon, label]) => <button key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} /><div><b>{label}</b><span>{id === 'document' ? 'Read your saved pdfs and text' : id === 'notes' ? 'Key ideas from your lectures' : id === 'cards' ? 'Recall and review key concepts' : 'multiple-choice questions, keyword gaps and theory'}</span></div><Icon name="arrow" /></button>)}</div>{material && <section className="resume-strip"><div><span className="muted">Continue studying</span><h3>{material.filename}</h3></div><button className="button dark" onClick={() => navigate('study')}>Resume <Icon name="arrow" /></button></section>}{renderLibrary(5)}</>}
-    {view === 'materials' && <><div className="page-heading"><div><h1>My materials</h1><p>Your saved lectures. Open a file to access its study tools.</p></div></div>{renderLibrary()}<div className="compact-upload"><UploadCard onUpload={uploadFiles} busy={busy} browserLibrary={browserLibrary} /></div></>}
-    {view === 'study' && (!material ? <><div className="page-heading"><div><h1>{tabs.find(item => item[0] === tab)[2]}</h1><p>Choose a lecture from your library or upload a pdf to get started.</p></div></div><UploadCard onUpload={uploadFiles} busy={busy} browserLibrary={browserLibrary} /><div className="library-spacing">{renderLibrary()}</div></> : <><div className="page-heading study-heading"><div><button className="text-button" onClick={() => navigate('materials')}>← My materials</button><h1>{material.filename}</h1><p>{browserLibrary ? "Read your original lecture. Automated study tools are not connected yet." : "Study tools built from this lecture."}</p></div></div><div className="segmented" aria-label="Lecture study tools">{tabs.map(([id, icon, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><Icon name={icon} />{label}</button>)}</div>{tab === 'document' && browserLibrary && <DocumentReader key={selectedId} material={material} />}{tab === 'notes' && (current.notes ? <StudyNotes notes={current.notes} /> : <GenerateResource unavailable={browserLibrary} type="notes" busy={busy} onGenerate={() => generate('notes')} />)}{tab === 'cards' && (current.cards ? <FlashcardReview key={selectedId} cards={current.cards} /> : <GenerateResource unavailable={browserLibrary} type="cards" busy={busy} onGenerate={() => generate('cards')} />)}{tab === 'practice' && (practice ? <Practice {...{ practice, mcqAnswers, gapAnswers, theoryAnswers, result, submitPractice }} setMcqAnswers={answers => updateResource(selectedId, { mcqAnswers: answers, result: null })} setGapAnswers={answers => updateResource(selectedId, { gapAnswers: answers, result: null })} setTheoryAnswers={answers => updateResource(selectedId, { theoryAnswers: answers })} setResult={value => updateResource(selectedId, { result: value })} isSubmitting={pending === 'submit'} /> : <GenerateResource unavailable={browserLibrary} type="practice" busy={busy} onGenerate={() => generate('practice')} />)}<p className="session-footnote">{browserLibrary ? "Your original document stays in this browser until you remove it or clear browser data. Automated generation is not connected yet." : "Generated resources and answers remain available during this visit. Your uploaded lecture is saved in your local library."}</p></>)}
-    {view === 'progress' && <><div className="page-heading"><div><h1>My progress</h1><p>Practice results from your current visit.</p></div></div>{Object.entries(resources).filter(([, value]) => value.result).length ? Object.entries(resources).filter(([, value]) => value.result).map(([id, value]) => <article className="result-row" key={id}><div><h2>{materials.find(item => item.id === id)?.filename}</h2><p>{value.result.correct_mcqs} / 5 multiple-choice questions · {value.result.correct_gaps} / 3 keyword gaps</p></div><strong>{value.result.percentage}%</strong><button className="button secondary" onClick={() => openMaterial(materials.find(item => item.id === id), 'practice')}>Review</button></article>) : <section className="resource-empty"><Icon name="progress" /><h2>No practice results yet</h2><p>Complete a quiz on your lecture to see your score here.</p><button className="button primary" onClick={() => { setTab('practice'); navigate('study') }}>Start practice <Icon name="arrow" /></button></section>}<p className="session-footnote">Theory prompts are for self-review. Topic-level analysis and saved progress across visits are not connected yet.</p></>}
-    </main></div></div>
+  function renderLibrary(limit) {
+    return <section className="materials-section"><div className="section-heading"><h2>{limit ? 'Your recent materials' : 'Your materials'}</h2>{limit && materials.length > limit && <button className="text-button" onClick={() => navigate('materials')}>View all <Icon name="arrow" /></button>}</div>{loadingLibrary && <p className="muted" role="status">Loading your library…</p>}{libraryError && <LibraryState unavailable onRetry={reloadLibrary} loading={loadingLibrary} />}{materials.length ? <div className="material-list">{materials.slice(0, limit || materials.length).map(item => <article className="material-row" key={item.id}><span className="file-symbol"><Icon name="file" /></span><div><h3>{item.filename}</h3><p>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} · {resources[item.id]?.notes ? 'Notes ready' : 'Ready to study'}{resources[item.id]?.cards ? ' · Flashcards ready' : ''}</p></div><button className="button secondary" disabled={busy} onClick={() => openMaterial(item)}>Open <Icon name="arrow" /></button></article>)}</div> : !loadingLibrary && !libraryError && <LibraryState />}</section>
+  }
+
+  function renderReadyContent() {
+    if (libraryError) return <main className="auth-page"><section className="auth-card"><h1>Let’s reconnect your study space</h1><p role="alert">{libraryError}</p><button className="button primary" onClick={() => { setLoadingLibrary(true); setLibraryError(''); setStartupAttempt(value => value + 1) }}>Try again</button><SignOutButton /></section></main>
+    if (setupOpen || !profile?.onboarding_complete) return <OriginalOnboarding
+      savedProfile={profile} existingCourse={courses[0]}
+      onSave={completeInitialSetup} onOpen={() => { setSetupOpen(false); navigate('overview') }}
+    />
+
+    return <div className="workspace focused-workspace"><a className="skip-link" href="#main-content">Skip to content</a><aside className={`sidebar ${mobileOpen ? 'is-open' : ''}`}><a className="brand" href="#" onClick={event => { event.preventDefault(); navigate('overview') }}><Icon name="layers" /><span>lexycon.</span></a><p className="nav-caption">My workspace</p><nav aria-label="Main navigation">{navigation.map(([id, icon, label]) => <button key={id} className={view === id ? 'active' : ''} aria-current={view === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon name={icon} />{label}</button>)}</nav><div className="sidebar-bottom"><p>Your study tools</p>{tabs.map(([id, icon, label]) => <button className="tool-link" key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} />{label}</button>)}<SignOutButton /></div></aside><button className={`nav-scrim ${mobileOpen ? 'is-open' : ''}`} aria-label="Close navigation" aria-hidden={!mobileOpen} inert={!mobileOpen} onClick={() => setMobileOpen(false)} /><div className="workspace-main"><header className="topbar"><button className="icon-button mobile-menu" aria-label={mobileOpen ? 'Close navigation' : 'Open navigation'} aria-expanded={mobileOpen} onClick={() => setMobileOpen(!mobileOpen)}><Icon name={mobileOpen ? 'close' : 'menu'} /></button><div className="breadcrumb"><b>{navigation.find(item => item[0] === view)?.[2]}</b>{selectedCourse && <span>· {selectedCourse.code || selectedCourse.name}{selectedCourse.level && ` · ${selectedCourse.level}`}</span>}</div>{material && view === 'study' && <span className="current-file">{material.filename}</span>}<input ref={uploadInput} type="file" hidden accept=".pdf,.docx,.pptx,.txt" onChange={event => { uploadFile(event.target.files[0]); event.target.value = '' }} /><button className="button primary" disabled={busy || !selectedCourseId} onClick={() => uploadInput.current?.click()}><Icon name="upload" />Upload pdf</button></header><main id="main-content" tabIndex="-1" ref={heading} className="main-content"><div className={`status-message ${notice?.error ? 'error' : ''}`} role={notice?.error ? 'alert' : 'status'} hidden={!notice}>{notice?.text}</div>
+      <AccountAllowance refreshKey={pending} />
+      {view === 'overview' && <section aria-label="Your study preferences"><p>Your focus: {profile.goals.map(goal => ({ understand: 'Understand my lectures', remember: 'Remember what I learn', exams: 'Feel ready for exams', routine: 'Build a study routine' })[goal]).join(' · ')}</p><button className="text-button" onClick={() => setSetupOpen(true)}>Edit my study setup</button></section>}
+      {view === 'overview' && <><div className="page-heading"><div><h1>Hi, {profile.name}</h1><p>{selectedCourse?.name} · {profile.level}{profile.institution && ` · ${profile.institution}`} · Your daily goal: {profile.minutes} minutes</p></div></div><UploadCard onUpload={uploadFile} busy={busy} /><div className="tool-overview">{tabs.map(([id, icon, label]) => <button key={id} onClick={() => { setTab(id); navigate('study') }}><Icon name={icon} /><div><b>{label}</b><span>{id === 'notes' ? 'Key ideas from your lectures' : id === 'cards' ? 'Recall and review key concepts' : 'mcqs, keyword gaps and theory'}</span></div><Icon name="arrow" /></button>)}</div>{material && <section className="resume-strip"><div><span className="muted">Continue studying</span><h3>{material.filename}</h3></div><button className="button dark" onClick={() => navigate('study')}>Resume <Icon name="arrow" /></button></section>}{renderLibrary(5)}</>}
+      {view === 'recall' && <TodayRecall key={reviewCards[0]?.id || 'complete'} cards={reviewCards} progress={recallProgress} busy={busy} onRate={rateRecallCard} />}
+      {view === 'materials' && <><div className="page-heading"><div><h1>My materials</h1><p>Your saved lectures. Open a file to access its study tools.</p></div></div>{renderLibrary()}<div className="compact-upload"><UploadCard onUpload={uploadFile} busy={busy} /></div></>}
+      {view === 'study' && (!material ? <><div className="page-heading"><div><h1>{tabs.find(item => item[0] === tab)[2]}</h1><p>Choose a lecture from your library or upload a pdf to get started.</p></div></div><UploadCard onUpload={uploadFile} busy={busy} /><div className="library-spacing">{renderLibrary()}</div></> : <><div className="page-heading study-heading"><div><button className="text-button" onClick={() => navigate('materials')}>← My materials</button><h1>{material.filename}</h1><p>Study tools built from this lecture.</p></div></div><div className="segmented" aria-label="Lecture study tools">{tabs.map(([id, icon, label]) => <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}><Icon name={icon} />{label}</button>)}</div>{tab === 'notes' && (current.notes ? <StudyNotes notes={current.notes} /> : <GenerateResource type="notes" busy={busy} onGenerate={() => generate('notes')} />)}{tab === 'cards' && (current.cards ? <FlashcardReview key={selectedId} cards={current.cards} /> : <GenerateResource type="cards" busy={busy} onGenerate={() => generate('cards')} />)}{tab === 'practice' && (practice ? <Practice {...{ practice, mcqAnswers, gapAnswers, theoryAnswers, result, submitPractice }} setMcqAnswers={answers => updateResource(selectedId, { mcqAnswers: answers, result: null })} setGapAnswers={answers => updateResource(selectedId, { gapAnswers: answers, result: null })} setTheoryAnswers={answers => updateResource(selectedId, { theoryAnswers: answers })} setResult={value => updateResource(selectedId, { result: value })} isSubmitting={pending === 'submit'} /> : <GenerateResource type="practice" busy={busy} onGenerate={() => generate('practice')} />)}<p className="session-footnote">Generated resources are saved to your account. Reopening them uses no extra pack allowance. Your current practice answers remain available during this visit.</p></>)}
+      {view === 'progress' && <><div className="page-heading"><div><h1>My progress</h1><p>Practice results from your current visit.</p></div></div>{Object.entries(resources).filter(([, value]) => value.result).length ? Object.entries(resources).filter(([, value]) => value.result).map(([id, value]) => <article className="result-row" key={id}><div><h2>{materials.find(item => item.id === id)?.filename}</h2><p>{value.result.correct_mcqs} / 5 mcqs · {value.result.correct_gaps} / 3 keyword gaps</p></div><strong>{value.result.percentage}%</strong><button className="button secondary" onClick={() => openMaterial(materials.find(item => item.id === id), 'practice')}>Review</button></article>) : <section className="resource-empty"><Icon name="progress" /><h2>No practice results yet</h2><p>Complete a quiz on your lecture to see your score here.</p><button className="button primary" onClick={() => { setTab('practice'); navigate('study') }}>Start practice <Icon name="arrow" /></button></section>}<p className="session-footnote">Theory prompts are for self-review. Topic-level analysis and saved progress across visits are not connected yet.</p></>}
+      </main></div></div>
+  }
+
+  return <StudyLoading active={loadingLibrary}>{!loadingLibrary && renderReadyContent()}</StudyLoading>
+}
+
+export default function App() {
+  return <AuthGate><StudyDashboard /></AuthGate>
 }

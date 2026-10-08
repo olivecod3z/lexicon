@@ -1,0 +1,53 @@
+/* Quick feedback, with enough settling time to avoid abrupt state changes. */
+:root {
+  --motion-feedback: 200ms;
+  --motion-settle: 340ms;
+  --motion-panel: 320ms;
+  --ease-smooth: cubic-bezier(.22, .68, .25, 1);
+  --ease-spring: cubic-bezier(.22, .8, .3, 1);
+}
+
+body :is(button, a, summary, input, select, textarea, [role="button"], .setup-goal) {
+  transition: background-color var(--motion-feedback) var(--ease-smooth),
+    color var(--motion-feedback) var(--ease-smooth),
+    border-color var(--motion-feedback) var(--ease-smooth),
+    box-shadow var(--motion-feedback) var(--ease-smooth),
+    opacity var(--motion-feedback) var(--ease-smooth),
+    transform var(--motion-settle) var(--ease-spring),
+    scale var(--motion-settle) var(--ease-spring);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  body :is(button, a.button, [role="button"]):not(:disabled):not([aria-disabled="true"]):not(.nav-scrim):active {
+    scale: .99;
+  }
+  body button.flashcard:active { scale: .994; }
+}
+
+.motion-content {
+  animation: motion-content-in var(--motion-panel) var(--ease-smooth) both;
+}
+@keyframes motion-content-in {
+  from { opacity: 0; transform: translate3d(0, 4px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes motion-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+body .setup-step-content {
+  --step-offset: 6px;
+  animation-duration: var(--motion-settle);
+  animation-timing-function: var(--ease-smooth);
+}
+body .setup-step-content[data-direction='back'] { --step-offset: -6px; }
+body .setup-complete-icon { animation-timing-function: var(--ease-spring); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -3,7 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import usePageVisible from './use-page-visible';
 
-const DESKTOP_VIDEO = '/videos/lexicon-story.mp4';
+const DESKTOP_VIDEO = '/videos/lexycon-story.mp4';
+// These mobile asset paths remain on their established internal names so the
+// streaming fallback continues to work without a separate hosting migration.
 const MOBILE_VIDEO = '/videos/lexicon-story-mobile.mp4';
 const STREAM_VIDEO = '/videos/lexicon-story-mobile-hls/index.m3u8';
 
@@ -85,12 +87,12 @@ export default function StoryVideo() {
     <div className="story-copy">
       <h2 id="story-title">See the study routine<br /><span className="heading-continuation">come to life.</span></h2>
       <p>A short introduction to the idea behind Lexycon: turn your lectures into notes, practise what you know, and make room for understanding.</p>
-      <p className="story-availability">You can upload and read documents in the live dashboard today. Automated study tools shown in the video are not connected online yet.</p>
-      <a className="button lime" href="/dashboard/">Open student dashboard</a>
+      <p className="story-availability">Create your private study space, upload a lecture, and generate notes, flashcards, and practice in the live dashboard.</p>
+      <a className="button lime" href="https://dashboard.lexycon.site/">Open student dashboard</a>
     </div>
     <figure className="story-figure">
       <div className="story-player">
-        <video ref={video} src={source} autoPlay={playing} muted loop playsInline controls={false} preload={source ? 'auto' : 'none'} poster="/videos/lexicon-story-poster.jpg" tabIndex={-1} aria-label="Lexycon promotional video, 58 seconds" aria-describedby="story-caption" onError={handleError} />
+        <video ref={video} src={source} autoPlay={playing} muted loop playsInline controls={false} preload={source ? 'auto' : 'none'} poster="/videos/lexycon-story-poster.jpg" tabIndex={-1} aria-label="Lexycon promotional video, 58 seconds" aria-describedby="story-caption" onError={handleError} />
       </div>
       <figcaption id="story-caption">A little less overwhelm. A little more clarity.</figcaption>
       {error && <p role="status">Having trouble playing? <a href={fallbackSource.current}>Open the video directly</a>.</p>}

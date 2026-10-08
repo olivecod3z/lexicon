@@ -1,0 +1,70 @@
+.button::before { transition: transform var(--motion-settle) var(--ease-smooth); }
+.button > svg { transition: transform var(--motion-settle) var(--ease-spring); }
+.toolkit-panel { animation-duration: var(--motion-panel); animation-timing-function: var(--ease-smooth); }
+.toolkit-window .flashcard {
+  transition: background-color var(--motion-panel) var(--ease-smooth),
+    color var(--motion-panel) var(--ease-smooth),
+    scale var(--motion-settle) var(--ease-spring);
+}
+.quiz-feedback { animation: motion-content-in var(--motion-panel) var(--ease-smooth) both; }
+.notice-modal[open] { animation: motion-content-in var(--motion-settle) var(--ease-smooth) both; }
+.notice-modal[open]::backdrop { animation: motion-fade-in var(--motion-feedback) ease-out both; }
+
+.faq-item { border-bottom: 1px solid #dce5d7; }
+.faq-item h3 { font: inherit; }
+.faq-item h3 button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 23px 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: var(--type-small);
+  font-weight: 500;
+  text-align: left;
+}
+.faq-item:first-child h3 button { padding-top: 0; }
+.faq-item svg { color: #617a4e; transition: transform var(--motion-settle) var(--ease-spring); }
+.faq-item[data-expanded="true"] svg { transform: rotate(180deg); }
+.faq-answer {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  opacity: 0;
+  transition: grid-template-rows var(--motion-settle) var(--ease-smooth),
+    opacity var(--motion-feedback) var(--ease-smooth),
+    visibility 0s var(--motion-settle);
+}
+.faq-answer > div { min-height: 0; overflow: hidden; }
+.faq-answer p { font-size: var(--type-body); margin: 0; padding: 0 25px 18px 0; }
+.faq-item[data-expanded="true"] .faq-answer {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0s;
+}
+
+@media (max-width: 520px) {
+  .landscape-header .nav {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate3d(0, -8px, 0);
+    transition: opacity var(--motion-feedback) var(--ease-smooth),
+      transform var(--motion-settle) var(--ease-spring),
+      visibility 0s var(--motion-settle);
+  }
+  .landscape-header .nav.open {
+    visibility: visible;
+    pointer-events: auto;
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    transition-delay: 0s;
+  }
+}

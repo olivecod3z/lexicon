@@ -1,6 +1,6 @@
-# Lexicon landing page
+# Lexycon landing page
 
-The existing Lexicon marketing site, imported from the standalone landing-page project. It uses Next.js, Manrope and DM Sans, with bundled images and fonts.
+The existing Lexycon marketing site, imported from the standalone landing-page project. It uses Next.js, Manrope and DM Sans, with bundled images and fonts.
 
 ## Local development
 
@@ -11,12 +11,13 @@ From this directory, run `npm ci`, then `npm run dev`. Open http://localhost:300
 Run `npm run build:hosting` to produce the static site in `out/`.
 The shared Firebase configuration lives at the repository root. From the root,
 run `node scripts/build-hosting.mjs` to build both the landing page and dashboard.
-Then run `firebase deploy --only hosting --project lexicon-study-20260923` from the root.
+Then run `firebase deploy --only hosting --project lexicon-aguet-20260928 --config firebase.json` from the root using an authorized Firebase account. Keep the explicit project; the repository's legacy default is not this live site.
 
-The landing page's Get started and Open student dashboard links open `/dashboard/`.
-The public dashboard supports PDF/TXT uploads, reading, downloads and deletion in
-a browser-only library. Cloud accounts and AI generation are not connected. Local dashboard
-builds keep the existing API behavior.
+The landing page's Get started links open `https://dashboard.lexycon.site/`.
+That frontend uses the existing Firebase sign-in and hosted study API. The legacy
+`/dashboard/` path redirects to the dashboard subdomain after deployment.
+See `../frontend/README.md` for the separate dashboard Hosting build and the
+frontend/backend boundary on main.
 
 ## Repository structure
 
@@ -24,6 +25,6 @@ builds keep the existing API behavior.
 - `../frontend/`: the React study dashboard.
 - `../app/`: the Python API.
 
-These are separate applications hosted together; authentication and billing are not connected. Hosting is not automatically deployed by a Git push.
+These are separate frontend applications. Publishing them does not modify or deploy the Python API. Hosting is not automatically deployed by a Git push.
 
 Keep dependencies, build output, Firebase caches and local environment files out of commits. Use a task branch and pull request for future changes, following the root CONTRIBUTING.md.

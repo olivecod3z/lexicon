@@ -1,100 +1,46 @@
-# Lexicon frontend
+# Lexycon frontend
 
-The dashboard prioritizes PDF upload, your saved lecture library, and the three
-connected tools: study notes, flashcards, and mixed practice.
+This is the frontend deployed at https://dashboard.lexycon.site, including the
+account-backed onboarding, study workspace, and branded loading screen.
 
-## Understand the code
+## Backend boundary
 
-- `src/App.jsx`: library loading, selected lecture, navigation, API actions, and
-  per-material resource/answer state. Switching lectures preserves practice
-  answers during the visit.
-- `src/App.css`: semantic colors and responsive layout. Forest, lime, off-white
-  and blue-gray match the existing landing page.
-- `src/components/UploadCard.jsx`: accessible file picker and drag/drop surface.
-- `src/components/StudyResources.jsx`: notes, flashcard review and generate states.
-- `src/components/Practice.jsx`: MCQs, gaps, theory and objective scoring UI.
-- `src/api.js`: readable API failure handling.
+Production requests go to the existing authenticated API at
+https://lexicon-api-600311691439.europe-west1.run.app. Firebase web configuration
+in `src/firebase.js` identifies the public app; it does not contain a server key.
 
-`GET /materials` lists real saved metadata from the local Python backend.
-Generation uses the existing `study-pack`, `flashcards` and `practice-session`
-endpoints for the selected material. No API keys are sent to the frontend.
+This frontend-only publication does not update the Python code on main or deploy
+backend services, Firestore rules, or indexes. The older Python checkout on main
+does not provide all of this frontend's account/profile/review endpoints.
+Use a compatible development API through `VITE_API_BASE_URL` for integration work.
+Never put OpenAI keys or other server secrets into Vite environment variables.
 
-The uploaded material library survives refresh. Generated notes, flashcards,
-answers and scores currently last only while the page is open. Flashcard
-self-ratings last while that review component stays open. Course organization,
-accounts and cross-visit study-resource persistence remain future milestones.
+## Development and checks
 
-## Development
+From this folder, run `npm ci` and `npm run dev`.
+The isolated `/tests/fixtures/study-loading-preview.html` page displays the actual
+loading component without sign-in or API calls.
 
-From this folder run `npm ci`, then `npm run dev`. Run the backend on port 8000
-as described in the root README. `npm run build` creates the production bundle.
+Run `npm run lint` and
+`node --test tests/browser-library.test.mjs tests/onboarding.test.mjs tests/study-loading.test.mjs`.
+The browser-library and legacy onboarding tests cover retained utilities;
+they are not authenticated end-to-end tests. The old Python preview server does
+not simulate Firebase authentication or the account-backed dashboard.
 
-## Manual UI checks without AI calls
+## Frontend publishing
 
-Build the frontend, then from the repository root run:
+Use an authorized Firebase account and an explicit project; do not rely on the
+repository's legacy default project.
 
-`py frontend/tests/preview_server.py`
+From the repository root:
 
-Open http://127.0.0.1:5174. This isolated fixture server serves the real production
-frontend with synthetic responses. It does not call OpenAI or write to the
-lecture database. Never deploy this test server as the application.
+```sh
+node scripts/build-hosting.mjs
+firebase deploy --only hosting --project lexicon-aguet-20260928 --config firebase.json
+npm run build --prefix frontend
+firebase deploy --only hosting --project lexicon-aguet-20260928 --config firebase.dashboard.json
+```
 
-1. Confirm Upload PDF is visible immediately and the fixture library loads.
-2. Open `study-notes.txt`; generate notes and verify objectives/topics appear.
-3. Select Flashcards, create them, reveal with Enter and choose Got it.
-4. Select Practice & quiz and create practice. Incomplete submission is disabled.
-5. Answer some questions, switch to Dashboard and resume: answers should remain.
-6. Choose A for every MCQ and `active` for every gap; submit and check 100% on
-   My progress. Change an objective answer: the old result should disappear.
-7. Choose `tests/fixtures/unsupported.csv` from Upload PDF: see a type error.
-   Choose `study-notes.txt`: the selected lecture opens without duplicate IDs.
-8. Check a 390px viewport: upload remains prominent, no horizontal overflow,
-   navigation opens/closes, Escape closes it, and closed links are not focusable.
-
-Backend tests also check that the real library response excludes extracted text.
-Live AI generation is not exercised by the fixture checks.
-
-## Learning exercise
-
-Change `--surface-blue` in `src/App.css`, then inspect the resume strip. Next trace
-how `resources[materialId]` keeps one lecture's answers separate from another.
-Colors describe presentation; React state describes the current study session.
-
-## Hosted browser library
-
-The hosted build uses a device-local library (`src/browser-library.js`) instead of the Python API.
-PDF.js extracts selectable PDF text in a worker; the original file and text are stored in IndexedDB.
-Drag/drop or select multiple PDF/TXT files, each up to 25 MB. The local cap is 100 MB
-including extracted text; PDFs are limited to 500 pages. Scanned PDFs remain viewable
-without OCR. Password-protected or invalid PDFs show an error.
-
-Refreshes preserve the library, but clearing browser data removes it. There is no
-account sync, cloud backup, or live AI generation. Keep original copies outside the app.
-The Original lecture tab provides a PDF viewer, readable extracted text and a download.
-My materials provides removal. Files are never sent to an API in this mode.
-
-Run `npm run test:library` to check storage, metadata boundaries, validation, and deletion.
-Local development without the hosted flag continues to use the Python API.
-
-## Guided onboarding
-
-The landing page's Get started button opens `/onboarding`. The three steps
-collect a name and study details, goals and daily pace, and an optional first
-course. The completion screen opens `/dashboard/`. Old
-`/dashboard/?onboarding=1` links redirect to the replacement flow.
-
-The draft and completed profile are saved under `lexicon.onboarding.v1`.
-The dashboard imports completed profiles into its existing
-`lexicon-onboarding-v1` workspace without replacing saved lectures, resources,
-or earlier courses. Editing updates only the course created by the new flow.
-The dashboard's Edit study setup link opens `/onboarding?edit=1`.
-
-Build both applications with `node scripts/build-hosting.mjs` from the repository
-root to test this journey on one origin. Hosted uploads still use the existing
-IndexedDB library; local dashboard development still uses the Python API.
-This is guest setup, not authentication. Account creation, cross-device sync,
-and online generation remain separate work. Clearing browser data removes the
-saved setup and local documents.
-
-Run `node --test tests/onboarding.test.mjs` from `frontend` for the profile
-handoff, editing, storage failures, and existing-data preservation checks.
+The first build packages the landing page and the legacy `/dashboard/` bundle.
+The second builds dashboard assets for the subdomain root. Always keep
+`--only hosting`; publishing this frontend does not require a backend deployment.

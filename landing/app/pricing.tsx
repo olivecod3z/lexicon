@@ -9,12 +9,12 @@ const plans = [
   {
     name: 'Student', price: '3,000', description: 'Make room for a steady study routine.',
     features: ['30 learning packs per month', 'Saved materials and learning history', 'Custom practice mixes of up to 10 prompts', 'Balanced, theory-heavy, and multiple-choice revision presets'],
-    note: '', planned: ['Flashcard review controls', 'Basic progress and weak-topic feedback', 'Up to 50 Ask My Material questions per month', 'Exam Mode'],
+    note: '', planned: ['Scheduled daily recall sessions with due flashcards and saved practice', 'Optional gentle reminders at your chosen times, with quiet hours and snooze', 'Flashcard review controls', 'Basic progress and weak-topic feedback', 'Up to 50 Ask My Material questions per month', 'Exam Mode'],
   },
   {
     name: 'Pro', price: '7,000', description: 'More material. More practice. More room to learn.',
     features: ['75 learning packs per month', 'Everything in Student, with higher limits', 'Custom practice sets of up to 20 prompts'],
-    note: '', planned: ['Up to 100 Ask My Material questions per month', 'Saved practice templates', 'Larger and longer lecture-material support', 'Advanced weak-topic analytics and targeted practice', 'Higher storage'],
+    note: '', planned: ['Adaptive recall sessions prioritising weak and overdue topics across courses', 'Flexible short sessions around your study goals and exam dates', 'Optional gentle reminders with the same quiet hours and snooze controls as Student', 'Up to 100 Ask My Material questions per month', 'Saved practice templates', 'Larger and longer lecture-material support', 'Advanced weak-topic analytics and targeted practice', 'Higher storage'],
   },
 ];
 

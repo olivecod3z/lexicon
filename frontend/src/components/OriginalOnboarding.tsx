@@ -1,13 +1,13 @@
 'use client';
 
-import Link from 'next/link';
+import './OriginalOnboarding.css';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase';
-import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronLeft, FileText, Layers, Sun, Zap } from '../icons';
 
-const STORAGE_KEY = 'lexicon.onboarding.v1';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://lexicon-api-600311691439.europe-west1.run.app';
+import { auth } from '../firebase';
+import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronLeft, FileText, Layers, Sun, Zap } from './onboarding-icons';
+
+
+
 const stages = ['University', 'Secondary school', 'Postgraduate', 'Independent learning'] as const;
 const goals = [
   { id: 'understand', title: 'Understand my lectures', detail: 'Connect the dots in my course material.', icon: BookOpen, color: 'mint' },
@@ -32,12 +32,13 @@ type Profile = {
   course: string;
   courseCode: string;
   color: string;
+  level: string;
 };
 type Setup = { version: 1; step: number; complete: boolean; profile: Profile };
 type FieldErrors = Partial<Record<'name' | 'goals' | 'course', string>>;
 const initialProfile: Profile = {
   name: '', institution: '', stage: 'University', goals: [], minutes: 20,
-  course: '', courseCode: '', color: 'green',
+  course: '', courseCode: '', color: 'green', level: '',
 };
 
 function parseSetup(raw: string | null): Setup | null {
@@ -46,7 +47,7 @@ function parseSetup(raw: string | null): Setup | null {
     const data = JSON.parse(raw);
     const p = data?.profile;
     if (data?.version !== 1 || !p || !Number.isInteger(data.step) || data.step < 0 || data.step > 2 || typeof data.complete !== 'boolean') return null;
-    if (!['name', 'institution', 'stage', 'course', 'courseCode', 'color'].every(key => typeof p[key] === 'string')) return null;
+    if (!['name', 'institution', 'stage', 'course', 'courseCode', 'color', 'level'].every(key => typeof p[key] === 'string')) return null;
     if (p.name.length > 40 || p.institution.length > 100 || p.course.length > 100 || p.courseCode.length > 16) return null;
     if (!stages.includes(p.stage) || !colors.some(color => color.id === p.color) || ![10, 20, 30].includes(p.minutes)) return null;
     if (!Array.isArray(p.goals) || p.goals.length > goals.length || new Set(p.goals).size !== p.goals.length || !p.goals.every((id: unknown) => goals.some(goal => goal.id === id))) return null;
@@ -58,31 +59,17 @@ function parseSetup(raw: string | null): Setup | null {
   }
 }
 
-async function ensureFirstCourse(profile: Profile) {
-  const user = auth.currentUser;
-  if (!user) throw new Error('Your sign-in session has expired. Please sign in again.');
-  const headers = { Authorization: `Bearer ${await user.getIdToken()}` };
-  const existing = await fetch(`${API_BASE_URL}/courses`, { headers });
-  if (!existing.ok) throw new Error('Lexycon could not open your study space. Please try again.');
-  const courses = await existing.json();
-  if (courses.length) return;
-  const response = await fetch(`${API_BASE_URL}/courses`, {
-    method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: profile.course.trim(), code: profile.courseCode.trim(), color: profile.color }),
+export default function Onboarding({ onSave, onOpen, existingCourse, savedProfile }) {
+  const STORAGE_KEY = `lexycon.original-onboarding.${auth.currentUser?.uid}`;
+  const [draft] = useState(() => {
+    try { return parseSetup(window.localStorage.getItem(STORAGE_KEY)); } catch { return null; }
   });
-  if (!response.ok) {
-    const data = await response.json().catch(() => null);
-    throw new Error(typeof data?.detail === 'string' ? data.detail : 'Lexycon could not save your first course. Please try again.');
-  }
-}
-
-export default function Onboarding() {
-  const [authenticated, setAuthenticated] = useState<boolean | null>(null);
-  const [profile, setProfile] = useState<Profile>(initialProfile);
-  const [step, setStep] = useState(0);
+  const [profile, setProfile] = useState<Profile>(() => ({ ...initialProfile, ...draft?.profile, ...savedProfile,
+    ...(existingCourse ? { course: existingCourse.name, courseCode: existingCourse.code, color: existingCourse.color } : {}),
+  }));
+  const [step, setStep] = useState(savedProfile ? 0 : draft?.step || 0);
   const [complete, setComplete] = useState(false);
-  const [ready, setReady] = useState(false);
+  const ready = true;
   const [saveError, setSaveError] = useState(false);
   const [finishError, setFinishError] = useState('');
   const [isFinishing, setIsFinishing] = useState(false);
@@ -93,11 +80,6 @@ export default function Onboarding() {
   const pendingSetup = useRef<Setup | null>(null);
   const lastSaved = useRef('');
   const selectedColor = colors.find(color => color.id === profile.color) ?? colors[0];
-
-  useEffect(() => onAuthStateChanged(auth, user => {
-    if (user) setAuthenticated(true);
-    else window.location.replace('/dashboard/?onboarding=1');
-  }), []);
 
   const saveSetup = useCallback(() => {
     if (!pendingSetup.current) return;
@@ -110,22 +92,7 @@ export default function Onboarding() {
     } catch {
       setSaveError(true);
     }
-  }, []);
-
-  useEffect(() => {
-    try {
-      const saved = parseSetup(window.localStorage.getItem(STORAGE_KEY));
-      if (saved) {
-        setProfile(saved.profile);
-        setStep(saved.step);
-        setComplete(saved.complete && !new URLSearchParams(window.location.search).has('edit'));
-        if (new URLSearchParams(window.location.search).has('edit')) setStep(0);
-      }
-    } catch {
-      setSaveError(true);
-    }
-    setReady(true);
-  }, []);
+  }, [STORAGE_KEY]);
 
   useEffect(() => {
     if (!ready) return;
@@ -173,18 +140,21 @@ export default function Onboarding() {
     setStep(next);
   }
 
-  async function finish(skipCourse = false) {
+  async function finish() {
+    if (!profile.name.trim() || !profile.level) { goTo(0); return; }
+    if (!profile.goals.length) { goTo(1); return; }
+    if (isFinishing) return;
     setIsFinishing(true);
     setFinishError('');
     setDirection('forward');
     const cleanedProfile = {
       ...profile,
       name: profile.name.trim(), institution: profile.institution.trim(),
-      course: skipCourse ? '' : profile.course.trim(),
-      courseCode: skipCourse ? '' : profile.courseCode.trim(),
+      course: profile.course.trim(),
+      courseCode: profile.courseCode.trim(),
     };
     try {
-      if (!skipCourse) await ensureFirstCourse(cleanedProfile);
+      await onSave(cleanedProfile);
       setProfile(cleanedProfile);
       setErrors({});
       shouldFocus.current = true;
@@ -198,8 +168,8 @@ export default function Onboarding() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (step === 0 && !profile.name.trim()) {
-      setErrors({ name: 'Add the name you would like us to use.' });
+    if (step === 0 && (!profile.name.trim() || !profile.level)) {
+      setErrors({ name: 'Add your name and select your degree level.' });
       document.getElementById('setup-name')?.focus();
       return;
     }
@@ -209,7 +179,7 @@ export default function Onboarding() {
       return;
     }
     if (step === 2 && !profile.course.trim()) {
-      setErrors({ course: 'Add what you are studying, or choose Skip for now.' });
+      setErrors({ course: 'Add your starting course.' });
       document.getElementById('setup-course')?.focus();
       return;
     }
@@ -217,15 +187,15 @@ export default function Onboarding() {
     else void finish();
   }
 
-  if (authenticated !== true) return <main className="onboarding-shell"><p className="setup-loading" role="status">Opening your study setup…</p></main>;
+
 
   return (
     <div className="onboarding-shell">
       <a className="setup-skip-link" href="#setup-main">Skip to setup</a>
       <header className="setup-header">
-        <Link className="setup-brand" href="/" aria-label="Lexycon home"><Layers size={22} /><span>lexycon<span className="setup-dot">.</span></span></Link>
+        <a className="setup-brand" href="https://lexycon.site/" aria-label="Lexycon home"><Layers size={22} /><span>lexycon<span className="setup-dot">.</span></span></a>
         <span className="setup-header-label">A little clearer, every day.</span>
-        <Link className="setup-exit" href="/"><ChevronLeft size={16} /> Back to home</Link>
+        <a className="setup-exit" href="https://lexycon.site/"><ChevronLeft size={16} /> Back to home</a>
       </header>
 
       <div className="setup-layout">
@@ -286,12 +256,12 @@ export default function Onboarding() {
                   <div><span className="setup-eyebrow">Up next</span><h2>Your study dashboard</h2><p>A fresh start, at your own pace.</p></div>
                   <ArrowRight size={20} />
                 </div>
-                <a className="setup-primary setup-complete-action" href="/dashboard/" onClick={saveSetup}>Open my dashboard <ArrowRight size={18} /></a>
+                <button className="setup-primary setup-complete-action" type="button" onClick={onOpen}>Open my dashboard <ArrowRight size={18} /></button>
                 <button className="setup-edit" type="button" onClick={() => { shouldFocus.current = true; setDirection('back'); setComplete(false); setStep(0); }}>Edit my setup</button>
-              </> : <form noValidate onSubmit={handleSubmit}>
+              </> : <form noValidate onSubmit={handleSubmit}><fieldset disabled={isFinishing} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                 <div className="setup-step-meta"><span className="setup-eyebrow">Your study setup</span><span>Step {step + 1} of 3</span></div>
                 <h1 ref={heading} tabIndex={-1}>{['First, a little about you.', 'What brings you here?', 'What are you studying?'][step]}</h1>
-                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Tell us the degree, programme or course you want Lexycon to support first.'][step]}</p>
+                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Choose the university course you want to study first. Your free plan includes one course.'][step]}</p>
 
                 {step === 0 && <div className="setup-fields">
                   <div className="setup-field">
@@ -303,6 +273,7 @@ export default function Onboarding() {
                     <label htmlFor="setup-stage">Where are you in your learning?</label>
                     <select id="setup-stage" name="study-stage" value={profile.stage} onChange={event => update('stage', event.target.value)}>{stages.map(stage => <option key={stage}>{stage}</option>)}</select>
                   </div>
+                  <div className="setup-field"><label htmlFor="setup-level">Degree level</label><select id="setup-level" required value={profile.level} onChange={event => update('level', event.target.value)}><option value="">Select your level</option>{['100 Level', '200 Level', '300 Level', '400 Level', '500 Level', '600 Level', 'Postgraduate', 'Other'].map(level => <option key={level}>{level}</option>)}</select></div>
                   <div className="setup-field">
                     <label htmlFor="setup-institution">School or university <span>Optional</span></label>
                     <input id="setup-institution" name="organization" autoComplete="organization" value={profile.institution} onChange={event => update('institution', event.target.value)} placeholder="e.g. University of Lagos" maxLength={100} />
@@ -330,9 +301,9 @@ export default function Onboarding() {
 
                 {step === 2 && <>
                   <div className="setup-fields">
-                    <div className="setup-field"><label htmlFor="setup-course">Degree, programme or course</label><input id="setup-course" name="course" value={profile.course} onChange={event => update('course', event.target.value)} maxLength={100} placeholder="e.g. BSc Computer Science or psy 101" required aria-invalid={Boolean(errors.course)} aria-describedby={errors.course ? 'course-error' : undefined} />{errors.course && <p id="course-error" className="setup-field-error" role="alert">{errors.course}</p>}</div>
+                    <div className="setup-field"><label htmlFor="setup-course">Starting course</label><input readOnly={Boolean(existingCourse)} id="setup-course" name="course" value={profile.course} onChange={event => update('course', event.target.value)} maxLength={100} placeholder="e.g. Introduction to Computer Science" required aria-invalid={Boolean(errors.course)} aria-describedby={errors.course ? 'course-error' : undefined} />{errors.course && <p id="course-error" className="setup-field-error" role="alert">{errors.course}</p>}</div>
                     <div className="setup-course-options">
-                      <div className="setup-field"><label htmlFor="setup-course-code">Programme or course code <span>Optional</span></label><input id="setup-course-code" name="course-code" value={profile.courseCode} onChange={event => update('courseCode', event.target.value)} maxLength={16} placeholder="e.g. csc 201" /></div>
+                      <div className="setup-field"><label htmlFor="setup-course-code">Course code <span>Optional</span></label><input readOnly={Boolean(existingCourse)} id="setup-course-code" name="course-code" value={profile.courseCode} onChange={event => update('courseCode', event.target.value)} maxLength={16} placeholder="e.g. csc 201" /></div>
                       <fieldset className="setup-colors"><legend>Study space color</legend><div>{colors.map(color => <label key={color.id} title={color.label} style={{ background: color.value, color: color.ink }} className={profile.color === color.id ? 'is-selected' : ''}>
                         <input type="radio" name="course-color" value={color.id} checked={profile.color === color.id} onChange={() => update('color', color.id)} aria-label={color.label} />{profile.color === color.id && <Check size={18} />}
                       </label>)}</div></fieldset>
@@ -350,10 +321,10 @@ export default function Onboarding() {
                   {step > 0 ? <button type="button" className="setup-back" onClick={() => goTo(step - 1)}><ChevronLeft size={17} /> Back</button> : <span className="setup-action-note"><Zap size={15} /> A couple of minutes, all yours.</span>}
                   <button type="submit" className="setup-primary" disabled={isFinishing}>{step === 2 && isFinishing ? 'Saving your study space…' : step === 2 ? 'Finish setup' : 'Continue'}<ArrowRight size={18} /></button>
                 </div>
-                {step === 2 && <>{finishError && <p className="setup-field-error" role="alert">{finishError}</p>}<button type="button" className="setup-skip-course" disabled={isFinishing} onClick={() => void finish(true)}>Skip for now</button></>}
-              </form>}
+                {step === 2 && <>{finishError && <p className="setup-field-error" role="alert">{finishError}</p>}</>}
+              </fieldset></form>}
               </div>
-              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your setup could not be saved in this browser. You can continue, but keep this tab open.' : 'Your preferences stay in this browser and your first course is saved to your private Lexycon account.'}</p>
+              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your draft cannot be saved in this browser. Finish setup to save your profile to your account.' : 'Your completed profile and course are saved to your private Lexycon account.'}</p>
             </div>
           )}
         </main>

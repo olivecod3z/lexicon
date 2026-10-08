@@ -1,0 +1,83 @@
+.study-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  min-height: 100svh;
+  padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background: #0b1d14;
+  color: #f2f3e9;
+  text-align: center;
+}
+.study-loading.is-leaving { pointer-events: none; }
+
+.study-loading__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100%, 560px);
+}
+
+.study-loading__emblem {
+  position: relative;
+  width: min(100%, 62svh);
+  aspect-ratio: 1;
+  flex: none;
+  isolation: isolate;
+  /* Blend the media's matte into the full-screen background without framing it. */
+  mask-image: radial-gradient(closest-side, #000 80%, transparent 100%);
+}
+
+.study-loading__poster,
+.study-loading__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.study-loading__video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.study-loading__video.is-playing { opacity: 1; }
+
+.study-loading__status {
+  max-width: 100%;
+  margin: 12px 0 0;
+  color: #c3cec2;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .study-loading__content { animation: study-loading-appear 360ms ease-out both; }
+  .study-loading__video { transition: opacity 240ms ease-out; }
+  .study-loading.is-leaving { animation: study-loading-leave 360ms cubic-bezier(.22, .68, .25, 1) forwards; }
+  .study-loading.is-leaving .study-loading__emblem { animation: study-loading-open 360ms cubic-bezier(.22, .68, .25, 1) forwards; }
+}
+
+@keyframes study-loading-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes study-loading-leave {
+  to { opacity: 0; visibility: hidden; }
+}
+@keyframes study-loading-open {
+  to { transform: scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .study-loading__video,
+  .study-loading.is-leaving { display: none; }
+}
+
+@media (max-height: 480px) and (orientation: landscape) {
+  .study-loading__emblem { width: min(100%, 64svh); }
+  .study-loading__status { margin-top: 0; }
+}
