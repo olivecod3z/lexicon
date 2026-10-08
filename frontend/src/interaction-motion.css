@@ -1,0 +1,40 @@
+:root { --transition: var(--motion-feedback) var(--ease-smooth); }
+.workspace :is(.review-actions, .recall-ratings, .resource-empty, .study-paper, .recall-session, .recall-empty),
+.auth-card { animation: motion-content-in var(--motion-panel) var(--ease-smooth) both; }
+.workspace .quiz article button {
+  transition: background-color var(--motion-feedback) var(--ease-smooth),
+    border-color var(--motion-feedback) var(--ease-smooth),
+    transform var(--motion-settle) var(--ease-spring),
+    scale var(--motion-settle) var(--ease-spring);
+}
+.flashcard[aria-pressed="true"] { background: var(--surface-blue, #e6eedf); }
+
+@media (max-width: 650px) {
+  .workspace .sidebar {
+    display: flex;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translate3d(-100%, 0, 0);
+    transition: transform var(--motion-settle) var(--ease-smooth),
+      visibility 0s var(--motion-settle);
+  }
+  .workspace .sidebar.is-open {
+    visibility: visible;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
+    transition-delay: 0s;
+  }
+  .workspace .nav-scrim {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity var(--motion-feedback) var(--ease-smooth),
+      visibility 0s var(--motion-feedback);
+  }
+  .workspace .nav-scrim.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+}

@@ -17,7 +17,7 @@ const goals = [
 ] as const;
 const colors = [
   { id: 'green', label: 'Leaf', value: '#d9edc6', ink: '#38532c' },
-  { id: 'blue', label: 'Sky', value: '#dcebf6', ink: '#34536d' },
+  { id: 'blue', label: 'Sage', value: '#e0ead8', ink: '#405c35' },
   { id: 'rose', label: 'Rose', value: '#f7dfe2', ink: '#7d424b' },
   { id: 'yellow', label: 'Sunshine', value: '#f5ecc5', ink: '#6d5b25' },
 ] as const;
