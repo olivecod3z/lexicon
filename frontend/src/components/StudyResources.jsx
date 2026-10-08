@@ -19,7 +19,7 @@ export function GenerateResource({ type, busy, onGenerate }) {
   const config = {
     notes: ['file', 'Study notes', 'An overview, learning objectives and key ideas from your lecture.', 'Generate study notes'],
     cards: ['layers', 'Flashcards', 'Review your lecture through concept questions and keyword recall.', 'Create flashcards'],
-    practice: ['practice', 'Practice & quiz', '5 MCQs, 3 fill-in-the-gap questions and 2 theory prompts.', 'Create practice'],
+    practice: ['practice', 'Practice & quiz', '5 mcqs, 3 fill-in-the-gap questions and 2 theory prompts.', 'Create practice'],
   }
   const [icon, title, description, action] = config[type]
   return <section className="resource-empty"><span className="large-icon"><Icon name={icon} /></span><h2>{title}</h2><p>{description}</p><button className="button primary" disabled={busy} onClick={onGenerate}>{busy ? 'Generating…' : action}<Icon name="arrow" /></button></section>
