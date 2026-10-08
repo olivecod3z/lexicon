@@ -1,4 +1,5 @@
 {
+  "firestore": { "indexes": "firestore.indexes.json" },
   "hosting": {
     "public": "hosting-dist",
     "ignore": [

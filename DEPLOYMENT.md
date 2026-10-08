@@ -21,6 +21,18 @@ Legacy dashboard path: https://lexycon.site/dashboard/
 
 ## Sign-in and domain launch checklist
 
+The original onboarding now runs within the dashboard after authentication.
+`GET/POST /account/profile` stores the name, institution, degree level, goals,
+daily minutes, and completion flag against the authenticated account. A course
+alone never counts as completed onboarding. Existing accounts without a profile
+complete setup while retaining their existing course.
+
+Firestore needs the course/material composite indexes in `firestore.indexes.json`
+to combine account ownership filters with newest-first ordering. Deploy them with
+`firebase deploy --only firestore:indexes --project lexicon-aguet-20260928` and
+wait until they are READY before testing the signed-in dashboard. Missing indexes
+cause course/material reads to return 503 even when authentication succeeds.
+
 Before inviting students, complete these steps in this order:
 
 1. In **Firebase Console → Authentication → Sign-in method**, enable the
