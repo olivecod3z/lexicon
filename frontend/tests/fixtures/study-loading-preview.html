@@ -13,7 +13,8 @@
       import '/src/index.css'
       import '../../../shared/motion.css'
       import StudyLoading from '/src/components/StudyLoading.jsx'
-      createRoot(document.getElementById('root')).render(React.createElement(StudyLoading))
+      import StudyPending from '/src/components/StudyPending.jsx'
+      createRoot(document.getElementById('root')).render(React.createElement(StudyLoading, { fallback: React.createElement(StudyPending) }))
     </script>
   </body>
 </html>

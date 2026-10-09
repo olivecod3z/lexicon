@@ -175,7 +175,7 @@ def test_every_generation_route_checks_the_account_before_ai(monkeypatch, path):
     monkeypatch.setattr(main, 'generate_for_account', refuse)
     main.app.dependency_overrides[current_user] = lambda: AuthenticatedUser('alice', 'a@example.com', 'A', True)
     try:
-        response = TestClient(main.app).post(path, files={'file': ('lecture.txt', b'lecture notes', 'text/plain')})
+        response = TestClient(main.app).post(path, **({'json': {}} if path.endswith(('/practice', '/practice-session')) else {'files': {'file': ('lecture.txt', b'lecture notes', 'text/plain')}}))
         assert response.status_code == 429
         assert seen == ['alice']
     finally:
@@ -251,3 +251,13 @@ def test_reopening_cached_flashcards_preserves_review_schedule(db, monkeypatch):
     assert len(db.data) == 1
     assert db.data[key]['interval_days'] == 7
     assert db.data[key]['due_at'] == '2027-01-01'
+
+
+def test_custom_generation_reserves_every_batch_and_keeps_one_pack(db):
+    kind = "practice-v2-60-fixture"
+    generate("alice", "lecture", kind)
+    assert access.usage_summary("alice")["packs_used"] == 1
+    counters = [value["attempts"] for (group, key), value in db.data.items() if "attempts" in value]
+    assert counters == [6, 6, 6]
+    generate("alice", "lecture", kind)
+    assert [value["attempts"] for value in db.data.values() if "attempts" in value] == counters
