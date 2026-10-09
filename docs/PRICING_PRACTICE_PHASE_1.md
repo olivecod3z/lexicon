@@ -19,7 +19,7 @@ Practice preserves the 60,000-character material ceiling. Source regions preserv
 
 One distinct account/source lecture retains the existing one-pack accounting. Default practice retains the old cache key so existing packs remain reusable. Custom preference keys isolate saved mixes. Cached retries call no AI. Hosted reservations count each possible provider batch against the existing per-account daily and shared daily/monthly safety budgets. A six-batch set reserves six attempts before generation. Failed first generation refunds its pack; attempt reservations remain conservative because provider requests may have incurred cost. Transactions and leases preserve duplicate-request/concurrency protection. Existing UTC month-reset and data-preserving behavior remain unchanged.
 
-Token logging records real input/output consumption per batch without storing lecture content in logs. No live AI call was made during development; automated providers are synthetic. Therefore no financial saving or actual cost per pack has been established. Price/token monitoring and output quality should be evaluated before enabling paid access. Local generation keeps the existing development behavior and does not simulate hosted Firestore limits.
+Token logging records real input/output consumption per batch without storing lecture content in logs. One live AI smoke check used a synthetic lecture about active recall, spacing and interleaving: the provider returned the expected 5 MCQs, 3 gaps and 2 theory prompts, using 731 input and 1,078 output tokens. This small sample does not establish representative lecture quality, financial savings or actual cost per pack. Price/token monitoring and output quality should be evaluated before enabling paid access. Local generation keeps the existing development behavior and does not simulate hosted Firestore limits.
 
 ## Storage, deployment and configuration
 
@@ -37,10 +37,14 @@ Next: persist practice attempts with course/topic metadata and enforce private r
 
 ## Validation results
 
-- Full backend regression suite: 271 passed (synthetic generation; no live API calls).
-- Dashboard production build: passed.
-- Landing production build and TypeScript checks: passed.
+- Full backend regression suite after integration: 271 passed (synthetic providers).
+- Frontend regression suite after integration: 30 passed, including collaborator loading-screen, real-App startup, onboarding-copy and browser-library checks.
+- Dashboard production build after integration: passed.
+- Landing production build and TypeScript checks after integration: passed.
 - Pricing browser checks: 390, 768 and 1440 pixel viewports; no horizontal overflow, paid actions disabled, correct 10/30/60 limits.
 - `git diff --check`: passed.
+- Dependency audit: five high-severity entries in the existing frontend dependency tree (Firebase/Firestore, gRPC and source-map-js). No dependency versions were changed by this feature. These remain for review; no automatic or breaking dependency fix was applied.
 
-The dashboard's authenticated custom-practice flow has not received an end-to-end browser test; compilation and server tests cover the changes. Live generation correctness and source fidelity still need representative lecture checks. Paid upgrades/downgrades and payment webhooks cannot be tested until billing exists. No deployment was performed.
+Before the latest collaborator integration, manual browser checks used the real dashboard and API with a synthetic identity/provider: Free 10-question generation and 8/8 objective scoring, Student 12 gap-only questions and 12/12 scoring, Pro 60-question generation, disabled out-of-range/empty-section submissions, material-switch resets and 390/768/1440-pixel layouts. These checks do not verify real Firebase sign-in, hosted accounting, or real AI generation together. The isolated fixture is documented in `frontend/tests/practice-release/README.md`; it is not a production authentication bypass. After integration, the regression suites and production builds were repeated, but the manual browser exercise was not repeated.
+
+Collaborator integration includes `b3d4a60` from the dashboard branch and `de7fb3d` plus its predecessors from main. The onboarding and loader components match main at `de7fb3d`; changes to `App.jsx` relative to that commit are limited to practice options and dynamic score totals. Live generation correctness and source fidelity still need representative lecture checks. Paid upgrades/downgrades and payment webhooks cannot be tested until billing exists. No deployment was performed.
