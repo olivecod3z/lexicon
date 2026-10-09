@@ -130,8 +130,8 @@ test('loading animation respects reduced motion and keeps a bounded media-failur
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?display: none/)
   assert.match(component, /window\.matchMedia\('\(prefers-reduced-motion: reduce\)'\)/)
   assert.match(component, /motionAllowed && !showStill && <video/)
-  assert.match(component, /setTimeout\(\(\) => finish\('fallback'\), 1200\)/)
-  assert.match(component, /setTimeout\(\(\) => finish\('fallback'\), 2500\)/)
+  assert.match(component, /setTimeout\(\(\) => finish\('fallback'\), 8000\)/)
+  assert.match(component, /setTimeout\(\(\) => finish\('fallback'\), 6000\)/)
   assert.doesNotMatch(component, /setInterval|fetch\(/)
 })
 
@@ -157,6 +157,24 @@ test('slow media starts on the unit frame, with silent inline playback and no co
   assert.equal(video.controls, false)
   assert.equal(video.tabIndex, -1)
   assert.equal(container.querySelector('main').dataset.phase, 'waiting')
+})
+
+test('a cold download can start after sign-in resolves without skipping the assembly', async () => {
+  let startPlayback
+  playResult = () => new Promise(resolve => { startPlayback = resolve })
+  await render(true)
+  const video = container.querySelector('video')
+  await render(false)
+  assert.equal(container.querySelector('main').dataset.phase, 'waiting')
+  assert.equal([...timers.values()][0].delay, 8000, 'allow a cold download more than the old 1.2-second deadline')
+  assert.equal(container.querySelector('.study-loading__destination').hidden, true)
+  await act(async () => startPlayback())
+  assert.equal(container.querySelector('video'), video)
+  assert.equal(video.classList.contains('is-playing'), true)
+  assert.equal([...timers.values()][0].delay, 6000)
+  await dispatch(video, 'ended')
+  assert.equal(container.querySelector('main').dataset.phase, 'complete')
+  assert.equal(container.querySelector('.study-loading__destination').hidden, false)
 })
 
 test('auth-to-library handoff and early readiness never restart or cut off the same build-up', async () => {
@@ -222,7 +240,7 @@ test('blocked mobile autoplay falls back cleanly and allows the ready screen thr
   playResult = () => Promise.reject(new DOMException('Autoplay blocked', 'NotAllowedError'))
   await render()
   assert.equal(container.querySelector('video'), null)
-  assert.match(container.querySelector('img').src, /lexycon-study-seal/)
+  assert.match(container.querySelector('img').src, /lexycon-study-unit/, 'failed playback must not flash the completed emblem')
   await render(false)
   assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
   assert.equal(container.querySelector('.study-loading__destination').hidden, false)
@@ -243,7 +261,7 @@ test('a missing playback start cannot trap the page', async () => {
   playResult = () => new Promise(() => {})
   await render(true)
   const deadline = [...timers.values()][0]
-  assert.equal(deadline.delay, 1200)
+  assert.equal(deadline.delay, 8000)
   await act(async () => deadline.callback())
   assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
   assert.ok(container.querySelector('[data-testid="pending"]'))
@@ -252,7 +270,7 @@ test('a missing playback start cannot trap the page', async () => {
 test('a stalled video releases the intro at the playback deadline', async () => {
   await render(true)
   const deadline = [...timers.values()][0]
-  assert.equal(deadline.delay, 2500)
+  assert.equal(deadline.delay, 6000)
   await act(async () => deadline.callback())
   assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
   await dispatch(container.querySelector('main'), 'animationend')
@@ -297,7 +315,7 @@ test('StrictMode leaves only one video and one bounded playback deadline', async
   assert.equal(container.querySelectorAll('video').length, 1)
   assert.equal(new Set(playCalls).size, 1)
   assert.equal(timers.size, 1)
-  assert.equal([...timers.values()][0].delay, 2500, 'the playing clip gets its full duration after download')
+  assert.equal([...timers.values()][0].delay, 6000, 'the playing clip gets its full duration and buffering allowance after download')
   await dispatch(container.querySelector('video'), 'ended')
   assert.equal(timers.size, 0)
   assert.equal(container.querySelector('main').dataset.phase, 'complete')

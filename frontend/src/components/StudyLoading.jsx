@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import unitPoster from '../assets/lexycon-study-unit.webp'
-import sealPoster from '../assets/lexycon-study-seal.webp'
 import sealMotion from '../assets/lexycon-study-reveal.mp4'
 import './StudyLoading.css'
 
@@ -36,7 +35,8 @@ export default function StudyLoading({ active = true, children, fallback, messag
     let requesting = false
     let started = false
     // A stalled media download must never trap the user behind the intro.
-    let deadline = window.setTimeout(() => finish('fallback'), 1200)
+    // Cold mobile/CDN downloads can take several seconds before the first frame.
+    let deadline = window.setTimeout(() => finish('fallback'), 8000)
     function finish(next) {
       if (!alive || finished) return
       finished = true
@@ -56,7 +56,7 @@ export default function StudyLoading({ active = true, children, fallback, messag
         if (alive && !finished && !started) {
           started = true
           window.clearTimeout(deadline)
-          deadline = window.setTimeout(() => finish('fallback'), 2500)
+          deadline = window.setTimeout(() => finish('fallback'), 6000)
           setPhase('playing')
         }
       }).catch(fail).finally(() => { requesting = false })
@@ -94,7 +94,7 @@ export default function StudyLoading({ active = true, children, fallback, messag
     >
     <div className="study-loading__content">
       <div className="study-loading__emblem" aria-hidden="true">
-        <img className="study-loading__poster" src={showStill ? sealPoster : unitPoster} alt="" width="960" height="960" decoding="async" fetchPriority="high" />
+        <img className="study-loading__poster" src={unitPoster} alt="" width="960" height="960" decoding="async" fetchPriority="high" />
         {motionAllowed && !showStill && <video
           ref={video}
           className={`study-loading__video${phase === 'playing' || phase === 'complete' ? ' is-playing' : ''}`}
