@@ -44,7 +44,8 @@ h2 { font-size: 19px; font-weight: 600; letter-spacing: -.55px; }
 h3 { font-size: 15px; font-weight: 600; }
 p { line-height: 1.65; }
 .workspace { display: flex; min-height: 100vh; }
-.sidebar { position: fixed; inset: 0 auto 0 0; width: 234px; display: flex; flex-direction: column; padding: 33px 18px 20px; background: var(--forest); color: var(--on-forest); z-index: 30; }
+.sidebar { position: fixed; inset: 0 auto 0 0; width: 234px; display: flex; flex-direction: column; padding: 33px 18px 20px; background: var(--forest); color: var(--on-forest); z-index: 30; overflow-y: auto; overscroll-behavior: contain; }
+.sidebar > * { flex-shrink: 0; }
 .brand { display: flex; gap: 10px; align-items: center; padding: 0 14px; color: var(--on-forest); text-decoration: none; }
 .brand span { font-family: Manrope, sans-serif; font-size: 30px; letter-spacing: -1.4px; font-weight: 800; }
 .brand svg { width: 26px; height: 26px; }
@@ -290,10 +291,13 @@ progress::-webkit-progress-value { border-radius: 8px; background: var(--forest)
 .tool-overview span { display: block; font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
 .tool-overview svg { flex: none; width: 19px; }
 .tool-overview svg:last-child { width: 14px; margin-left: auto; }
-.sidebar-bottom { margin-top: auto; padding: 45px 12px 8px; }
-.sidebar-bottom>p { font-size: 9px; letter-spacing: 1.2px; color: #c0cdb9; margin-bottom: 13px; }
-.tool-link { display: flex; align-items: center; gap: 11px; min-height: 40px; border: 0; padding: 8px 0; background: transparent; color: var(--on-forest); font-size: 12px; }
-.tool-link svg { width: 16px; }
+.sidebar-bottom { margin-top: auto; padding: 32px 12px max(8px, env(safe-area-inset-bottom)); }
+.sidebar-plan { display: grid; gap: 8px; min-height: 82px; padding-top: 20px; margin-bottom: 16px; border-top: 1px solid #e9f1df30; letter-spacing: 0; }
+.sidebar-plan > span { color: #c0cdb9; font-size: 12px; }
+.sidebar-plan > strong { color: var(--brand-primary); font-size: 18px; line-height: 1.4; overflow-wrap: anywhere; }
+.sidebar-bottom .auth-signout { min-height: 44px; color: var(--on-forest); font-size: 12px; }
+.sidebar-bottom .auth-signout:hover { color: var(--brand-primary); }
+.sidebar-bottom .auth-signout:focus-visible { outline-color: var(--brand-primary); }
 .current-file { color: var(--text-secondary); font-size: 12px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 40%; }
 .resume-strip { display: flex; justify-content: space-between; align-items: center; gap: 20px; background: var(--surface-blue); padding: 20px 24px; border-radius: 12px; margin-bottom: 30px; }
 .resume-strip h3 { margin: 8px 0 0; overflow-wrap: anywhere; }

@@ -3,7 +3,7 @@ import { reload, sendEmailVerification } from 'firebase/auth'
 import { auth } from '../firebase'
 import { api } from '../api'
 
-export default function AccountAllowance({ refreshKey }) {
+export default function AccountAllowance({ refreshKey, onPlanChange }) {
   const [usage, setUsage] = useState(null)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -12,10 +12,18 @@ export default function AccountAllowance({ refreshKey }) {
   useEffect(() => {
     let active = true
     api('/account/usage').then(data => {
-      if (active) { setUsage(data); setError('') }
-    }).catch(() => { if (active) setError('Your allowance is temporarily unavailable. Limits are still checked when you create resources.') })
+      if (active) {
+        setUsage(data); setError('')
+        onPlanChange?.(['Free', 'Student', 'Pro'].includes(data.plan) ? data.plan : null)
+      }
+    }).catch(() => {
+      if (active) {
+        setError('Your allowance is temporarily unavailable. Limits are still checked when you create resources.')
+        onPlanChange?.(null)
+      }
+    })
     return () => { active = false }
-  }, [refreshKey])
+  }, [refreshKey, onPlanChange])
   async function verify(check) {
     if (busy || !auth.currentUser) return
     setBusy(true); setMessage('')

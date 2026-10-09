@@ -401,3 +401,74 @@ test('signed-out visitors reach sign-in without waiting for any library requests
   assert.ok(container.querySelector('input[type="email"]'))
   assert.equal(requests, 0)
 })
+
+async function renderReadyDashboard(getUsage) {
+  const requests = []
+  const responses = {
+    '/account/profile': { profile: { name: 'Sam', onboarding_complete: true, goals: ['remember'], level: '200 level', minutes: 20 } },
+    '/courses': [{ id: 'course-1', name: 'Biology', code: 'BIO201' }],
+    '/materials': [{ id: 'material-1', filename: 'Lecture.pdf', created_at: '2026-10-09T09:00:00Z' }],
+    '/reviews/today': [],
+    '/reviews/progress': { reviewed_today: 0, current_streak: 0 },
+  }
+  globalThis.__startupHarness = { api: async path => {
+    requests.push(path)
+    if (path === '/account/usage') return getUsage()
+    assert.ok(path in responses, `Unexpected API request: ${path}`)
+    return responses[path]
+  } }
+  window.scrollTo = () => {}
+  window.HTMLElement.prototype.animate = () => ({ cancel() {} })
+  globalThis.requestAnimationFrame = callback => callback()
+  const { default: App } = await server.ssrLoadModule('/src/App.jsx')
+  root = createRoot(container)
+  await act(async () => root.render(createElement(App)))
+  await act(async () => globalThis.__startupHarness.emitAuth({ uid: 'test-user' }))
+  await dispatch(container.querySelector('video'), 'ended')
+  await dispatch(container.querySelector('.study-loading'), 'animationend')
+  return requests
+}
+
+for (const plan of ['Free', 'Student', 'Pro']) {
+  test(`the sidebar shows the server's ${plan} plan without a second allowance request`, async () => {
+    const requests = await renderReadyDashboard(() => ({ plan, packs_used: 1, packs_limit: 3 }))
+    assert.equal(container.querySelector('.sidebar-plan strong').textContent, plan)
+    assert.equal(container.querySelector('.sidebar-plan > span').textContent, 'Current plan')
+    assert.equal(requests.filter(path => path === '/account/usage').length, 1)
+    assert.match(container.querySelector('.allowance-card strong').textContent, new RegExp(`^${plan}`))
+  })
+}
+
+test('the sidebar does not claim a Free plan while usage is loading or unavailable', async () => {
+  let rejectUsage
+  await renderReadyDashboard(() => new Promise((_, reject) => { rejectUsage = reject }))
+  assert.equal(container.querySelector('.sidebar-plan strong').textContent, 'Loading plan...')
+  await act(async () => rejectUsage(new Error('Temporarily unavailable')))
+  assert.equal(container.querySelector('.sidebar-plan strong').textContent, 'Plan unavailable')
+  assert.ok(container.querySelector('nav[aria-label="Main navigation"]'))
+  assert.match(container.querySelector('.allowance-card').textContent, /temporarily unavailable/)
+})
+
+test('unknown account plans are not presented as active subscriptions', async () => {
+  await renderReadyDashboard(() => ({ plan: 'Unknown', packs_used: 0, packs_limit: 3 }))
+  assert.equal(container.querySelector('.sidebar-plan strong').textContent, 'Plan unavailable')
+})
+
+test('sidebar tools are not duplicated and all three lecture tabs remain reachable', async () => {
+  await renderReadyDashboard(() => ({ plan: 'Free', packs_used: 0, packs_limit: 3 }))
+  const sidebar = container.querySelector('.sidebar')
+  assert.deepEqual([...sidebar.querySelectorAll('nav button')].map(button => button.textContent),
+    ['Dashboard', "Today's recall", 'My materials', 'Study workspace', 'My progress'])
+  assert.equal(sidebar.querySelector('.tool-link'), null)
+  assert.doesNotMatch(sidebar.textContent, /Your study tools|Study notes|Flashcards|Practice & quiz/)
+  assert.equal(sidebar.querySelector('.auth-signout').textContent, 'Sign out')
+  await dispatch(container.querySelector('.material-row button'), 'click')
+  assert.deepEqual([...container.querySelectorAll('.segmented button')].map(button => button.textContent),
+    ['Study notes', 'Flashcards', 'Practice & quiz'])
+  assert.equal(sidebar.querySelector('[aria-current="page"]').textContent, 'Study workspace')
+  await dispatch(container.querySelector('.mobile-menu'), 'click')
+  assert.ok(sidebar.classList.contains('is-open'))
+  assert.equal(sidebar.querySelector('.sidebar-plan strong').textContent, 'Free')
+  await act(async () => document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })))
+  assert.equal(sidebar.classList.contains('is-open'), false)
+})
