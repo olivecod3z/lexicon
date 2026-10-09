@@ -4,16 +4,16 @@ import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase';
-import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronLeft, FileText, Layers, Sun, Zap } from '../icons';
+import { ArrowRight, BookOpen, Check, CheckCircle2, ChevronLeft, Layers, Sun } from '../icons';
 
 const STORAGE_KEY = 'lexicon.onboarding.v1';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://lexicon-api-600311691439.europe-west1.run.app';
 const stages = ['University', 'Secondary school', 'Postgraduate', 'Independent learning'] as const;
 const goals = [
-  { id: 'understand', title: 'Understand my lectures', detail: 'Connect the dots in my course material.', icon: BookOpen, color: 'mint' },
-  { id: 'remember', title: 'Remember what I learn', detail: 'Make the important ideas stick.', icon: Layers, color: 'blue' },
-  { id: 'exams', title: 'Feel ready for exams', detail: 'Find the gaps before the big day.', icon: CheckCircle2, color: 'rose' },
-  { id: 'routine', title: 'Build a study routine', detail: 'Make a little progress, more often.', icon: Sun, color: 'yellow' },
+  { id: 'understand', title: 'Understand my lectures', icon: BookOpen, color: 'mint' },
+  { id: 'remember', title: 'Remember what I learn', icon: Layers, color: 'blue' },
+  { id: 'exams', title: 'Feel ready for exams', icon: CheckCircle2, color: 'rose' },
+  { id: 'routine', title: 'Build a study routine', icon: Sun, color: 'yellow' },
 ] as const;
 const colors = [
   { id: 'green', label: 'Leaf', value: '#d9edc6', ink: '#38532c' },
@@ -224,15 +224,12 @@ export default function Onboarding() {
       <a className="setup-skip-link" href="#setup-main">Skip to setup</a>
       <header className="setup-header">
         <Link className="setup-brand" href="/" aria-label="Lexycon home"><Layers size={22} /><span>lexycon<span className="setup-dot">.</span></span></Link>
-        <span className="setup-header-label">A little clearer, every day.</span>
         <Link className="setup-exit" href="/"><ChevronLeft size={16} /> Back to home</Link>
       </header>
 
       <div className="setup-layout">
         <aside className="setup-sidebar" aria-label="Setup progress">
           <div className="setup-sidebar-content">
-            <span className="setup-eyebrow">Make yourself at home</span>
-            <h2>A study space.<br />Your kind of pace.</h2>
             <ol className="setup-steps">
               {steps.map((label, index) => {
                 const done = ready && (complete || index < step);
@@ -240,7 +237,7 @@ export default function Onboarding() {
                 return <li key={label} className={`${done ? 'is-done' : ''} ${current ? 'is-current' : ''}`}>
                   <button type="button" disabled={!ready || complete || index >= step} onClick={() => goTo(index)} aria-current={current ? 'step' : undefined}>
                     <span className="setup-step-number">{done ? <Check size={16} /> : `0${index + 1}`}</span>
-                    <span><strong>{label}</strong><small>{['The basics, on your terms', 'What you want to work on', 'One good place to start'][index]}</small></span>
+                    <strong>{label}</strong>
                     {current && <span className="setup-current-dot" aria-hidden="true" />}
                     {done && <span className="setup-sr-only">Completed</span>}
                   </button>
@@ -250,9 +247,7 @@ export default function Onboarding() {
           </div>
           <div className="setup-landscape">
             <img src="/images/study-landscape-mobile.webp" alt="" width="768" height="1024" decoding="async" />
-            <p>Small steps.<br /><strong>Brighter lightbulb moments.</strong></p>
           </div>
-          <div className="setup-sidebar-footer"><Sun size={16} /> A little progress is still progress.</div>
         </aside>
 
         <main id="setup-main" className="setup-main" aria-busy={!ready}>
@@ -272,26 +267,18 @@ export default function Onboarding() {
               <div className="setup-step-content" key={complete ? 'complete' : step} data-direction={direction}>
               {complete ? <>
                 <div className="setup-complete-icon"><Check size={30} /></div>
-                <span className="setup-eyebrow">A good beginning</span>
                 <h1 ref={heading} tabIndex={-1}>All set, {profile.name.trim()}.</h1>
-                <p className="setup-intro">A little structure. A pace that works for you.</p>
                 <dl className="setup-summary">
                   <div><dt>Your studies</dt><dd>{profile.stage}{profile.institution.trim() && <small>{profile.institution.trim()}</small>}</dd></div>
                   <div><dt>Your focus</dt><dd>{goals.filter(goal => profile.goals.includes(goal.id)).map(goal => <span key={goal.id}>{goal.title}</span>)}</dd></div>
                   <div><dt>Your daily pace</dt><dd>{profile.minutes} minutes</dd></div>
                   <div><dt>What you are studying</dt><dd>{profile.course.trim() || 'Taking this step later'}{profile.courseCode.trim() && <small>{profile.courseCode.trim()}</small>}</dd></div>
                 </dl>
-                <div className="setup-next">
-                  <span className="setup-next-icon"><FileText size={23} /></span>
-                  <div><span className="setup-eyebrow">Up next</span><h2>Your study dashboard</h2><p>A fresh start, at your own pace.</p></div>
-                  <ArrowRight size={20} />
-                </div>
                 <a className="setup-primary setup-complete-action" href="/dashboard/" onClick={saveSetup}>Open my dashboard <ArrowRight size={18} /></a>
                 <button className="setup-edit" type="button" onClick={() => { shouldFocus.current = true; setDirection('back'); setComplete(false); setStep(0); }}>Edit my setup</button>
               </> : <form noValidate onSubmit={handleSubmit}>
-                <div className="setup-step-meta"><span className="setup-eyebrow">Your study setup</span><span>Step {step + 1} of 3</span></div>
+                <div className="setup-step-meta"><span>Step {step + 1} of 3</span></div>
                 <h1 ref={heading} tabIndex={-1}>{['First, a little about you.', 'What brings you here?', 'What are you studying?'][step]}</h1>
-                <p className="setup-intro">{['Every study space starts with a name. Let\'s make this one yours.', 'Think about what would make studying feel a little better.', 'Tell us the degree, programme or course you want Lexycon to support first.'][step]}</p>
 
                 {step === 0 && <div className="setup-fields">
                   <div className="setup-field">
@@ -314,16 +301,16 @@ export default function Onboarding() {
                     <legend>Your goals <span>Choose all that fit</span></legend>
                     {goals.map(goal => <label className={`setup-goal ${profile.goals.includes(goal.id) ? 'is-selected' : ''}`} key={goal.id}>
                       <span className={`setup-goal-icon ${goal.color}`}><goal.icon size={22} /></span>
-                      <span className="setup-goal-copy"><strong>{goal.title}</strong><small>{goal.detail}</small></span>
+                      <span className="setup-goal-copy"><strong>{goal.title}</strong></span>
                       <input id={`goal-${goal.id}`} type="checkbox" name="goals" value={goal.id} checked={profile.goals.includes(goal.id)} aria-invalid={Boolean(errors.goals)} aria-describedby={errors.goals ? 'goals-error' : undefined} onChange={event => update('goals', event.target.checked ? [...profile.goals, goal.id] : profile.goals.filter(id => id !== goal.id))} />
                     </label>)}
                     {errors.goals && <p id="goals-error" className="setup-field-error" role="alert">{errors.goals}</p>}
                   </fieldset>
                   <fieldset className="setup-pace">
-                    <legend>A daily pace that feels doable</legend>
+                    <legend>Daily study time</legend>
                     <div className="setup-pace-options">{[10, 20, 30].map(minutes => <label key={minutes} className={profile.minutes === minutes ? 'is-selected' : ''}>
                       <input type="radio" name="minutes" value={minutes} checked={profile.minutes === minutes} onChange={() => update('minutes', minutes)} />
-                      <span>{minutes} min</span><small>{minutes === 10 ? 'A quick check-in' : minutes === 20 ? 'A little momentum' : 'Time to dig in'}</small>
+                      <span>{minutes} min</span>
                     </label>)}</div>
                   </fieldset>
                 </>}
@@ -340,20 +327,19 @@ export default function Onboarding() {
                   </div>
                   <div className="setup-course-preview" style={{ borderTopColor: selectedColor.value }}>
                     <span className="setup-course-symbol" style={{ background: selectedColor.value, color: selectedColor.ink }}><BookOpen size={25} /></span>
-                    <span className="setup-preview-code">{profile.courseCode.trim() || 'Your study space'}</span>
-                    <h2>{profile.course.trim() || 'A new chapter starts here.'}</h2>
-                    <div><span><FileText size={15} /> 0 study packs</span><span>Ready for a fresh start</span></div>
+                    {profile.courseCode.trim() && <span className="setup-preview-code">{profile.courseCode.trim()}</span>}
+                    <h2>{profile.course.trim() || 'Your course'}</h2>
                   </div>
                 </>}
 
                 <div className="setup-actions">
-                  {step > 0 ? <button type="button" className="setup-back" onClick={() => goTo(step - 1)}><ChevronLeft size={17} /> Back</button> : <span className="setup-action-note"><Zap size={15} /> A couple of minutes, all yours.</span>}
+                  {step > 0 && <button type="button" className="setup-back" onClick={() => goTo(step - 1)}><ChevronLeft size={17} /> Back</button>}
                   <button type="submit" className="setup-primary" disabled={isFinishing}>{step === 2 && isFinishing ? 'Saving your study space…' : step === 2 ? 'Finish setup' : 'Continue'}<ArrowRight size={18} /></button>
                 </div>
                 {step === 2 && <>{finishError && <p className="setup-field-error" role="alert">{finishError}</p>}<button type="button" className="setup-skip-course" disabled={isFinishing} onClick={() => void finish(true)}>Skip for now</button></>}
               </form>}
               </div>
-              <p className={`setup-save-note ${saveError ? 'has-error' : ''}`} role="status">{saveError ? 'Your setup could not be saved in this browser. You can continue, but keep this tab open.' : 'Your preferences stay in this browser and your first course is saved to your private Lexycon account.'}</p>
+              {saveError && <p className="setup-save-note has-error" role="status">Your setup could not be saved in this browser. You can continue, but keep this tab open.</p>}
             </div>
           )}
         </main>
