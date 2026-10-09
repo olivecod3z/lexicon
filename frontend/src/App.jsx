@@ -4,6 +4,7 @@ import Icon from './components/Icon'
 import AuthGate, { SignOutButton } from './components/AuthGate'
 import LibraryState from './components/LibraryState'
 import StudyLoading from './components/StudyLoading'
+import StudyPending from './components/StudyPending'
 import UploadCard from './components/UploadCard'
 import Practice from './components/Practice'
 import AccountAllowance from './components/AccountAllowance'
@@ -203,7 +204,7 @@ export default function App() {
   const [authStatus, setAuthStatus] = useState('pending')
   const [libraryLoading, setLibraryLoading] = useState(true)
   const loading = authStatus === 'pending' || (authStatus === 'signed-in' && libraryLoading)
-  return <StudyLoading active={loading}>
+  return <StudyLoading active={loading} fallback={<StudyPending signingIn={authStatus === 'pending'} />}>
     <AuthGate onStatusChange={setAuthStatus}><StudyDashboard onLoadingChange={setLibraryLoading} /></AuthGate>
   </StudyLoading>
 }

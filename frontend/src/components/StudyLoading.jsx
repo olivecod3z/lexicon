@@ -4,26 +4,17 @@ import sealPoster from '../assets/lexycon-study-seal.webp'
 import sealMotion from '../assets/lexycon-study-reveal.mp4'
 import './StudyLoading.css'
 
-export default function StudyLoading({ active = true, children, message = 'Opening your study space\u2026' }) {
+export default function StudyLoading({ active = true, children, fallback, message = 'Opening your study space\u2026' }) {
   const video = useRef(null)
   const [motionAllowed, setMotionAllowed] = useState(null)
   const [phase, setPhase] = useState(active ? 'waiting' : 'complete')
-  const [wasActive, setWasActive] = useState(active)
   const [dismissed, setDismissed] = useState(!active)
-  const [cycle, setCycle] = useState(0)
-  if (wasActive !== active) {
-    setWasActive(active)
-    if (active) {
-      setPhase('waiting')
-      setDismissed(false)
-      setCycle(value => value + 1)
-    }
-  }
-  if (!active && motionAllowed === false && !dismissed) setDismissed(true)
+  if (motionAllowed === false && !dismissed) setDismissed(true)
   const settled = phase === 'complete' || phase === 'fallback' || motionAllowed === false
-  const leaving = !active && settled
-  const visible = (active || !dismissed) && !(leaving && motionAllowed === false)
-  const covered = visible && !leaving
+  // The intro finishes once per visit; network requests continue in the page.
+  const leaving = settled
+  const visible = !dismissed && motionAllowed !== false
+  const covered = active || (visible && !leaving)
   const showStill = phase === 'fallback' || motionAllowed === false
 
   useEffect(() => {
@@ -87,10 +78,11 @@ export default function StudyLoading({ active = true, children, message = 'Openi
       window.removeEventListener('pageshow', play)
       player.pause()
     }
-  }, [motionAllowed, visible, cycle])
+  }, [motionAllowed, visible])
 
   return <>
     {children && <div className="study-loading__destination" hidden={covered} inert={covered} aria-hidden={covered || undefined}>{children}</div>}
+    {active && (!visible || leaving) && fallback}
     {visible && <main
       className={`study-loading${leaving ? ' is-leaving' : ''}`}
       data-phase={showStill ? 'fallback' : phase}
@@ -104,7 +96,6 @@ export default function StudyLoading({ active = true, children, message = 'Openi
       <div className="study-loading__emblem" aria-hidden="true">
         <img className="study-loading__poster" src={showStill ? sealPoster : unitPoster} alt="" width="960" height="960" decoding="async" fetchPriority="high" />
         {motionAllowed && !showStill && <video
-          key={cycle}
           ref={video}
           className={`study-loading__video${phase === 'playing' || phase === 'complete' ? ' is-playing' : ''}`}
           src={sealMotion}

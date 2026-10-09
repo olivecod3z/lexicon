@@ -82,7 +82,8 @@ after(async () => { await server?.close(); dom?.window.close() })
 
 async function render(active = true, children = createElement('button', null, 'Open lecture')) {
   root ||= createRoot(container)
-  await act(async () => root.render(createElement(StudyLoading, { active }, children)))
+  const fallback = createElement('p', { 'data-testid': 'pending', role: 'status' }, 'Loading your library...')
+  await act(async () => root.render(createElement(StudyLoading, { active, fallback }, children)))
 }
 async function dispatch(target, type) {
   await act(async () => target.dispatchEvent(new window.Event(type, { bubbles: true })))
@@ -177,31 +178,43 @@ test('auth-to-library handoff and early readiness never restart or cut off the s
   assert.equal(container.querySelector('button').textContent, 'Open lecture')
 })
 
-test('a slow API holds the complete emblem until data is ready without looping', async () => {
+test('a slow API cannot hold the completed emblem on screen', async () => {
   await render()
+  assert.equal(container.querySelector('[data-testid="pending"]'), null)
   const video = container.querySelector('video')
   await dispatch(video, 'ended')
   await dispatch(video, 'canplay')
   assert.equal(playCalls.length, 1)
   assert.equal(video.loop, false)
   assert.equal(container.querySelector('.study-loading__destination').hidden, true)
-  await render(false)
-  assert.equal(container.querySelector('video'), video)
   assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
+  assert.equal(timers.size, 0, 'there is no extra hold after assembly')
+  await dispatch(container.querySelector('main'), 'animationend')
+  assert.equal(container.querySelector('main'), null, 'intro leaves while the API is still pending')
+  assert.ok(container.querySelector('[data-testid="pending"]'))
+  await render(false)
+  assert.equal(container.querySelector('[data-testid="pending"]'), null)
+  assert.equal(container.querySelector('.study-loading__destination').hidden, false)
+  assert.equal(container.querySelector('video'), null)
 })
 
-test('a deliberate retry during the exit starts a fresh bounded sequence', async () => {
+test('retries during and after the exit use the page without replaying the intro', async () => {
   await render()
   const previous = container.querySelector('video')
   await dispatch(previous, 'ended')
   await render(false)
   await render(true)
-  const next = container.querySelector('video')
-  assert.notEqual(next, previous)
-  assert.equal(container.querySelector('main').classList.contains('is-leaving'), false)
-  assert.equal(timers.size, 1)
+  assert.equal(container.querySelector('video'), previous)
+  assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
+  assert.equal(timers.size, 0)
+  await dispatch(container.querySelector('main'), 'animationend')
   await render(false)
-  await dispatch(next, 'ended')
+  await render(true)
+  assert.equal(container.querySelector('video'), null)
+  assert.equal(playCalls.length, 1)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
+  await render(false)
   assert.equal(container.querySelector('.study-loading__destination').hidden, false)
 })
 
@@ -215,20 +228,36 @@ test('blocked mobile autoplay falls back cleanly and allows the ready screen thr
   assert.equal(container.querySelector('.study-loading__destination').hidden, false)
 })
 
-test('media errors and a missing playback completion cannot trap the ready page', async () => {
+test('media errors immediately release the intro even while data is pending', async () => {
   await render()
   const video = container.querySelector('video')
   await dispatch(video, 'error')
   assert.equal(container.querySelector('main').dataset.phase, 'fallback')
-  await render(false)
+  assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
   await dispatch(container.querySelector('main'), 'animationend')
+  assert.equal(container.querySelector('main'), null)
+})
+
+test('a missing playback start cannot trap the page', async () => {
   playResult = () => new Promise(() => {})
   await render(true)
-  await render(false)
   const deadline = [...timers.values()][0]
   assert.equal(deadline.delay, 1200)
   await act(async () => deadline.callback())
   assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
+})
+
+test('a stalled video releases the intro at the playback deadline', async () => {
+  await render(true)
+  const deadline = [...timers.values()][0]
+  assert.equal(deadline.delay, 2500)
+  await act(async () => deadline.callback())
+  assert.equal(container.querySelector('main').classList.contains('is-leaving'), true)
+  await dispatch(container.querySelector('main'), 'animationend')
+  assert.equal(container.querySelector('main'), null)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
 })
 
 test('reduced motion skips playback and the visual wait, including live preference changes', async () => {
@@ -236,18 +265,30 @@ test('reduced motion skips playback and the visual wait, including live preferen
   await render()
   assert.equal(container.querySelector('video'), null)
   assert.equal(playCalls.length, 0)
-  assert.match(container.querySelector('img').src, /lexycon-study-seal/)
+  assert.equal(container.querySelector('main'), null)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
   await render(false)
   assert.equal(container.querySelector('main'), null)
   reduced = false
   await act(async () => { for (const listener of preferenceListeners) listener() })
   assert.equal(container.querySelector('main'), null, 'enabling motion must not replay a dismissed intro')
   await render(true)
-  assert.ok(container.querySelector('video'))
+  assert.equal(container.querySelector('video'), null)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
   reduced = true
   await act(async () => { for (const listener of preferenceListeners) listener() })
   await render(false)
   assert.equal(container.querySelector('main'), null)
+})
+
+test('enabling reduced motion during the build-up moves straight to the pending page', async () => {
+  await render(true)
+  assert.ok(container.querySelector('video'))
+  reduced = true
+  await act(async () => { for (const listener of preferenceListeners) listener() })
+  assert.equal(container.querySelector('main'), null)
+  assert.ok(container.querySelector('[data-testid="pending"]'))
+  assert.equal(timers.size, 0)
 })
 
 test('StrictMode leaves only one video and one bounded playback deadline', async () => {
@@ -296,4 +337,49 @@ test('real App startup keeps one video across mocked authentication and all five
   await dispatch(container.querySelector('.study-loading'), 'animationend')
   assert.equal(container.querySelector('.study-loading'), null)
   assert.ok(container.querySelector('input'), 'the real onboarding screen is available')
+})
+
+test('real App reveals a nonblank page before slow authentication and library requests finish', async () => {
+  const pending = new Map()
+  globalThis.__startupHarness = { api: path => new Promise(resolve => pending.set(path, resolve)) }
+  const { default: App } = await server.ssrLoadModule('/src/App.jsx')
+  root = createRoot(container)
+  await act(async () => root.render(createElement(App)))
+  await dispatch(container.querySelector('video'), 'ended')
+  assert.match(container.querySelector('.study-pending [role="status"]').textContent, /Connecting your account/)
+  await dispatch(container.querySelector('.study-loading'), 'animationend')
+  assert.equal(container.querySelector('.study-loading'), null)
+  assert.ok(container.querySelector('.study-pending main'))
+  await act(async () => globalThis.__startupHarness.emitAuth({ uid: 'test-user' }))
+  assert.equal(container.querySelector('video'), null)
+  assert.equal(pending.size, 5)
+  assert.match(container.querySelector('.study-pending [role="status"]').textContent, /Loading your library/)
+  assert.equal(container.querySelector('input'), null, 'onboarding never flashes before profile loading')
+  await act(async () => {
+    pending.get('/account/profile')({ profile: null })
+    pending.get('/courses')([])
+    pending.get('/materials')([])
+    pending.get('/reviews/today')([])
+    pending.get('/reviews/progress')({ reviewed_today: 0, current_streak: 0 })
+  })
+  assert.equal(container.querySelector('.study-pending'), null)
+  assert.equal(container.querySelector('.study-loading__destination').hidden, false)
+  assert.ok(container.querySelector('input'), 'the real onboarding replaces the pending layout')
+  assert.equal(playCalls.length, 1)
+})
+
+test('signed-out visitors reach sign-in without waiting for any library requests', async () => {
+  let requests = 0
+  globalThis.__startupHarness = { api: () => { requests += 1 } }
+  const { default: App } = await server.ssrLoadModule('/src/App.jsx')
+  root = createRoot(container)
+  await act(async () => root.render(createElement(App)))
+  await dispatch(container.querySelector('video'), 'ended')
+  await dispatch(container.querySelector('.study-loading'), 'animationend')
+  await act(async () => globalThis.__startupHarness.emitAuth(null))
+  assert.equal(container.querySelector('.study-pending'), null)
+  assert.equal(container.querySelector('.study-loading'), null)
+  assert.equal(container.querySelector('.study-loading__destination').hidden, false)
+  assert.ok(container.querySelector('input[type="email"]'))
+  assert.equal(requests, 0)
 })
