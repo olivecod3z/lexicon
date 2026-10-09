@@ -17,6 +17,7 @@ from openai import (
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from app.study_packs import MAX_SOURCE_CHARACTERS
+from app.ai_limits import client_limits, output_limits, record_usage
 from app.text_chunks import split_text_for_generation
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ class MCQQuestion(BaseModel):
 
 
 class MCQSet(BaseModel):
-    """The quiz-question shape returned to a Lexicon client."""
+    """The quiz-question shape returned to a Lexycon client."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -102,7 +103,7 @@ def generate_mcqs(source_text: str) -> MCQSet:
 def _generate_mcqs_from_source(source_text: str) -> GeneratedMCQSet:
     """Ask OpenAI for five questions about one bounded section of material."""
     if len(source_text) > MAX_SOURCE_CHARACTERS:
-        raise MCQGenerationError("Lexicon received a text chunk that is too large to process.")
+        raise MCQGenerationError("Lexycon received a text chunk that is too large to process.")
 
     api_key = os.environ.get("OPENAI_API_KEY")
     model = os.environ.get("OPENAI_MODEL")
@@ -111,13 +112,13 @@ def _generate_mcqs_from_source(source_text: str) -> GeneratedMCQSet:
             "MCQ generation is not configured. Set OPENAI_API_KEY and OPENAI_MODEL."
         )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, **client_limits())
     try:
         response = client.responses.create(
             model=model,
             instructions=INSTRUCTIONS,
             input=f"Source material:\n---\n{source_text}\n---",
-            store=False,
+            store=False, **output_limits(),
             text={
                 "format": {
                     "type": "json_schema",
@@ -127,17 +128,18 @@ def _generate_mcqs_from_source(source_text: str) -> GeneratedMCQSet:
                 }
             },
         )
+        record_usage(response, "mcqs", model)
         return GeneratedMCQSet.model_validate(json.loads(response.output_text))
     except AuthenticationError as error:
-        logger.warning("OpenAI rejected Lexicon's API key: %s", error.request_id)
-        raise MCQGenerationError("OpenAI rejected the API key in Lexicon's .env file.") from error
+        logger.warning("OpenAI rejected Lexycon's API key: %s", error.request_id)
+        raise MCQGenerationError("OpenAI rejected the API key in Lexycon's .env file.") from error
     except PermissionDeniedError as error:
-        logger.warning("OpenAI denied Lexicon access: %s", error.request_id)
+        logger.warning("OpenAI denied Lexycon access: %s", error.request_id)
         raise MCQGenerationError(
             "This OpenAI project does not have permission to use the selected model."
         ) from error
     except NotFoundError as error:
-        logger.warning("Lexicon's selected OpenAI model was not found: %s", error.request_id)
+        logger.warning("Lexycon's selected OpenAI model was not found: %s", error.request_id)
         raise MCQGenerationError("The selected OpenAI model is unavailable to this project.") from error
     except RateLimitError as error:
         logger.warning("OpenAI rate or quota limit reached: %s", error.request_id)
@@ -152,8 +154,8 @@ def _generate_mcqs_from_source(source_text: str) -> GeneratedMCQSet:
     except (json.JSONDecodeError, ValidationError) as error:
         logger.warning("OpenAI returned an invalid MCQ structure: %s", type(error).__name__)
         raise MCQGenerationError(
-            "OpenAI returned quiz questions that did not pass Lexicon's validation."
+            "OpenAI returned quiz questions that did not pass Lexycon's validation."
         ) from error
     except OpenAIError as error:
         logger.warning("Unexpected OpenAI error: %s", type(error).__name__)
-        raise MCQGenerationError("Lexicon could not reach OpenAI. Please try again.") from error
+        raise MCQGenerationError("Lexycon could not reach OpenAI. Please try again.") from error

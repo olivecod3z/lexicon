@@ -5,7 +5,7 @@ MAX_GENERATION_CHUNKS = 4
 
 
 class TextChunkingError(ValueError):
-    """Raised when material is too large for Lexicon's current safe limit."""
+    """Raised when material is too large for Lexycon's current safe limit."""
 
 
 def split_text_for_generation(text: str) -> list[str]:

@@ -1,4 +1,4 @@
-# Lexicon
+# Lexycon
 
 An AI-powered study workspace for university students:
 **Upload → Learn → Test → Improve**.
@@ -12,11 +12,13 @@ An AI-powered study workspace for university students:
 - Submit objective answers for scoring, and review current-visit results.
 - Use a responsive dashboard matching the landing page's forest-green/lime theme.
 
-This is a local development application. Accounts, course organization,
-subscriptions, Ask My Material, topic-level analytics and durable study-resource
-history are not implemented yet. The library is local and is not scoped to user
-accounts. Generated resources and answers are currently kept while the page is
-open; extracted lecture text is saved in an ignored local SQLite database.
+The local development mode stores one course, lecture text, recall cards and
+practice data in an ignored SQLite database. The hosted dashboard uses Firebase
+Authentication and Firestore so each student's course and materials remain
+private to that account. Hosted generation is limited to three unique lecture
+packs per account per UTC month, with additional daily and shared safety caps.
+Subscriptions, payments, Ask My Material, topic-level analytics and durable
+practice-result history are not implemented yet.
 
 ## Start locally
 
@@ -58,7 +60,7 @@ support before continuing; do not commit machine-specific environments.
 - `tests/`: backend tests; generation is mocked during automated checks.
 - `frontend/tests/`: isolated manual UI-test server and synthetic fixtures.
 - `AGENTS.md`: the build-and-learn contract for Codex.
-- `Lexicon_Codex_Project_Brief.md`: product scope and roadmap.
+- `Lexycon_Codex_Project_Brief.md`: product scope and roadmap.
 - `DESIGN_SYSTEM.md`: visual and interaction guidelines.
 
 AI output is validated on the server. Original files are not retained by the
@@ -73,7 +75,7 @@ cd frontend
 npm run build
 ```
 
-Current validation: 30 backend tests pass and the frontend production build
+Current validation: 72 backend tests pass and the frontend production build
 passes. Manual browser checks cover library navigation, generated notes,
 flashcard reveal/self-review, practice submission, results and mobile layout.
 These use deterministic fixtures; they do not validate live AI output quality.
@@ -96,4 +98,7 @@ Install dependencies with `npm ci --prefix landing` and `npm ci --prefix fronten
 Run `node scripts/build-hosting.mjs` from the root, then
 `firebase deploy --only hosting --project lexicon-study-20260923`.
 The landing page is served at `/` and links to the student dashboard at `/dashboard/`.
-The hosted dashboard saves PDFs/TXT files on-device with IndexedDB. Documents can be read, downloaded and removed. AI generation and account sync are not connected; the local Python API is not deployed.
+The hosted dashboard connects to the authenticated Cloud Run API. Firestore stores
+each account's course, extracted lecture text, generated-resource cache, review
+cards and practice sessions. Original uploaded files are not retained by the
+backend; the browser may keep a local copy for reading during the current visit.

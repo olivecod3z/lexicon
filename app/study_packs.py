@@ -16,6 +16,7 @@ from openai import (
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.ai_limits import client_limits, output_limits, record_usage
 from app.text_chunks import split_text_for_generation
 
 MAX_SOURCE_CHARACTERS = 60_000
@@ -36,7 +37,7 @@ class StudySection(BaseModel):
 
 
 class StudyPack(BaseModel):
-    """The first saved-content shape Lexicon will eventually persist."""
+    """The first saved-content shape Lexycon will eventually persist."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -84,7 +85,7 @@ def generate_study_pack(source_text: str) -> StudyPack:
 def _generate_study_pack_from_source(source_text: str, instructions: str) -> StudyPack:
     """Ask OpenAI for one bounded source, then validate the returned structure."""
     if len(source_text) > MAX_SOURCE_CHARACTERS:
-        raise StudyPackGenerationError("Lexicon's combined notes were too large to summarize safely.")
+        raise StudyPackGenerationError("Lexycon's combined notes were too large to summarize safely.")
 
     api_key = os.environ.get("OPENAI_API_KEY")
     model = os.environ.get("OPENAI_MODEL")
@@ -93,13 +94,13 @@ def _generate_study_pack_from_source(source_text: str, instructions: str) -> Stu
             "Study-pack generation is not configured. Set OPENAI_API_KEY and OPENAI_MODEL."
         )
 
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(api_key=api_key, **client_limits())
     try:
         response = client.responses.create(
             model=model,
             instructions=instructions,
             input=f"Source material:\n---\n{source_text}\n---",
-            store=False,
+            store=False, **output_limits(),
             text={
                 "format": {
                     "type": "json_schema",
@@ -109,17 +110,18 @@ def _generate_study_pack_from_source(source_text: str, instructions: str) -> Stu
                 }
             },
         )
+        record_usage(response, "study_packs", model)
         return StudyPack.model_validate(json.loads(response.output_text))
     except AuthenticationError as error:
-        logger.warning("OpenAI rejected Lexicon's API key: %s", error.request_id)
-        raise StudyPackGenerationError("OpenAI rejected the API key in Lexicon's .env file.") from error
+        logger.warning("OpenAI rejected Lexycon's API key: %s", error.request_id)
+        raise StudyPackGenerationError("OpenAI rejected the API key in Lexycon's .env file.") from error
     except PermissionDeniedError as error:
-        logger.warning("OpenAI denied Lexicon access: %s", error.request_id)
+        logger.warning("OpenAI denied Lexycon access: %s", error.request_id)
         raise StudyPackGenerationError(
             "This OpenAI project does not have permission to use the selected model."
         ) from error
     except NotFoundError as error:
-        logger.warning("Lexicon's selected OpenAI model was not found: %s", error.request_id)
+        logger.warning("Lexycon's selected OpenAI model was not found: %s", error.request_id)
         raise StudyPackGenerationError("The selected OpenAI model is unavailable to this project.") from error
     except RateLimitError as error:
         logger.warning("OpenAI rate or quota limit reached: %s", error.request_id)
@@ -134,8 +136,8 @@ def _generate_study_pack_from_source(source_text: str, instructions: str) -> Stu
     except (json.JSONDecodeError, ValidationError) as error:
         logger.warning("OpenAI returned an invalid study-pack structure: %s", type(error).__name__)
         raise StudyPackGenerationError(
-            "OpenAI returned notes that did not pass Lexicon's study-pack validation."
+            "OpenAI returned notes that did not pass Lexycon's study-pack validation."
         ) from error
     except OpenAIError as error:
         logger.warning("Unexpected OpenAI error: %s", type(error).__name__)
-        raise StudyPackGenerationError("Lexicon could not reach OpenAI. Please try again.") from error
+        raise StudyPackGenerationError("Lexycon could not reach OpenAI. Please try again.") from error

@@ -1,7 +1,7 @@
-# LEXICON — Codex Project Brief
+# LEXYCON — Codex Project Brief
 
-## What Lexicon Is
-Lexicon is an AI-powered SaaS that turns university course materials into an adaptive study system.
+## What Lexycon Is
+Lexycon is an AI-powered SaaS that turns university course materials into an adaptive study system.
 
 Core loop: **Upload → Learn → Test → Improve**
 
@@ -16,12 +16,12 @@ Initial capabilities:
 - Eventually support “Ask My Material” with RAG
 
 ## Product Positioning
-Working brand: **Lexicon**
+Working brand: **Lexycon**
 
 Suggested positioning:
 > Turn your lectures into a smarter way to study.
 
-Do not position Lexicon as merely a PDF summarizer or AI quiz generator. AI is the engine; Lexicon owns the student's study workflow.
+Do not position Lexycon as merely a PDF summarizer or AI quiz generator. AI is the engine; Lexycon owns the student's study workflow.
 
 ## Target User
 Primary: university students who study from lecture materials and prepare for tests/exams.
@@ -125,7 +125,7 @@ Implement subscriptions with **entitlements**, not hard-coded plan checks. Track
 
 # LEARNING CONTRACT — CRITICAL
 
-The founder is learning Python and AI automation while building Lexicon.
+The founder is learning Python and AI automation while building Lexycon.
 
 Learning loop:
 **Build → Encounter concept → Pause → Learn → Implement/modify → Test → Continue**
@@ -146,9 +146,9 @@ Codex is both an engineering partner and teacher.
 ### If I say “I don’t understand”
 Stop progressing temporarily.
 1. Define the concept in plain English.
-2. Explain why Lexicon needs it.
+2. Explain why Lexycon needs it.
 3. Give a tiny example.
-4. Connect it back to Lexicon.
+4. Connect it back to Lexycon.
 5. Then return to implementation.
 
 ### Avoid Codex dependency
@@ -249,7 +249,7 @@ When asked to build:
 If a task is large, break it into milestones rather than generating a huge one-shot implementation.
 
 ## Founder Goal
-The goal is not only to ship Lexicon. Lexicon is the founder's practical curriculum for Python, AI APIs, SaaS development and AI automation.
+The goal is not only to ship Lexycon. Lexycon is the founder's practical curriculum for Python, AI APIs, SaaS development and AI automation.
 
 By launch, the founder should be able to:
 - Understand the architecture

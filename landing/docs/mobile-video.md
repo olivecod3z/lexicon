@@ -5,7 +5,7 @@ The mobile media files were recovered unchanged from the existing
 the same 58-second `Lexicon-Final.mp4` replacement already used on the site.
 The full-size video and the glossy flip-card artwork are unchanged.
 
-- Desktop fallback: `public/videos/lexicon-story.mp4`, 720 x 1280.
+- Desktop fallback: `public/videos/lexycon-story.mp4`, 720 x 1280.
 - Mobile fallback: `public/videos/lexicon-story-mobile.mp4`, 540 x 960,
   7,742,712 bytes instead of the desktop file's 25,016,641 bytes.
 - Native streaming: `public/videos/lexicon-story-mobile-hls/index.m3u8`
@@ -26,8 +26,9 @@ by this frontend update. The MP4 fallback remains available if a host
 cannot serve the stream. `tsconfig.json` excludes static assets and build
 output so transport-stream `.ts` files are not treated as TypeScript.
 
-Visible branding is **Lexycon**. Existing asset paths and storage keys
-intentionally retain `lexicon` so saved work and deployed URLs keep working.
+Visible branding is **Lexycon**. The new mobile fallback and HLS asset paths
+retain `lexicon` internally so the recovered media can be served without a
+separate hosting migration.
 
 ## Verification
 

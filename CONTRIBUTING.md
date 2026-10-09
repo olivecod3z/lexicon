@@ -1,7 +1,7 @@
-# Working on Lexicon together
+# Working on Lexycon together
 
 1. Clone this private repository into your own folder and open it in Codex.
-2. Ask Codex to read `AGENTS.md`, `Lexicon_Codex_Project_Brief.md`, and
+2. Ask Codex to read `AGENTS.md`, `Lexycon_Codex_Project_Brief.md`, and
    `DESIGN_SYSTEM.md` before editing. These files carry the shared context.
 3. Follow the README setup. Use your own `.env`; keys and databases are ignored.
 4. Agree on a small task before editing. Avoid assigning the same files to both

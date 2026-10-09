@@ -1,34 +1,32 @@
 import { Check } from './icons';
+import policy from '../../shared/plan-policy.json';
 
 const plans = [
-  {
-    name: 'Free', price: '0', description: 'Start with a lecture. Find your way to study.',
-    features: ['3 learning packs per month', 'Basic notes, flashcards, and multiple-choice questions', 'One balanced practice set per pack: 5 multiple-choice questions, 3 fill-in-the-gap questions, and 2 theory prompts', 'Unlimited retries on generated practice', 'Limited saved-material and quiz history'],
-    note: 'Ask My Material is not included at launch.', planned: [],
-  },
-  {
-    name: 'Student', price: '3,000', description: 'Make room for a steady study routine.',
-    features: ['30 learning packs per month', 'Saved materials and learning history', 'Custom practice mixes of up to 10 prompts', 'Balanced, theory-heavy, and multiple-choice revision presets'],
-    note: '', planned: ['Scheduled daily recall sessions with due flashcards and saved practice', 'Optional gentle reminders at your chosen times, with quiet hours and snooze', 'Flashcard review controls', 'Basic progress and weak-topic feedback', 'Up to 50 Ask My Material questions per month', 'Exam Mode'],
-  },
-  {
-    name: 'Pro', price: '7,000', description: 'More material. More practice. More room to learn.',
-    features: ['75 learning packs per month', 'Everything in Student, with higher limits', 'Custom practice sets of up to 20 prompts'],
-    note: '', planned: ['Adaptive recall sessions prioritising weak and overdue topics across courses', 'Flexible short sessions around your study goals and exam dates', 'Optional gentle reminders with the same quiet hours and snooze controls as Student', 'Up to 100 Ask My Material questions per month', 'Saved practice templates', 'Larger and longer lecture-material support', 'Advanced weak-topic analytics and targeted practice', 'Higher storage'],
-  },
+  { name: 'Free' as const, headline: 'Start learning, completely free.',
+    description: 'Turn your lectures into useful study materials and discover a better way to revise.',
+    features: ['Study notes and flashcards', '5 MCQs, 3 fill-in-the-gap questions, and 2 theory prompts', 'Unlimited retries of generated practice', 'Saved lecture materials'],
+    planned: [] as string[], cta: 'Get started free' },
+  { name: 'Student' as const, headline: 'Build a better study routine.',
+    description: 'More practice, more flexibility, and the tools to stay consistent throughout the semester.',
+    features: ['Everything in Free', 'Custom practice mixes with a question-count selector', 'Balanced, MCQ-heavy, and theory-heavy presets', 'Balanced or selected-section coverage and exam-style practice'],
+    planned: ['Practice history and basic progress tracking', 'Basic weak-topic feedback', 'Scheduled daily recall and optional reminders'], cta: 'Choose Student' },
+  { name: 'Pro' as const, headline: 'Prepare smarter. Perform better.',
+    description: 'Turn your course materials into a personalized exam-preparation experience.',
+    features: ['Everything in Student', 'Larger custom practice sets'],
+    planned: ['Exam Simulator: timed mock tests with corrections', 'Study Insights: detailed performance analytics', 'Smart Revision: evidence-based weak-topic practice', 'Adaptive recall sessions', 'Ask My Material: 100 questions per month'], cta: 'Unlock Pro' },
 ];
 
 export default function Pricing() {
   return <section id="pricing" className="pricing-section wrap" aria-labelledby="pricing-title">
-    <div className="pricing-heading"><h2 id="pricing-title">A plan for your study rhythm</h2><p>Start small, or make space for the whole semester.</p></div>
-    <p className="pricing-availability">Plans for launch. Explore the sample today; subscriptions aren’t open yet.</p>
-    <div className="pricing-grid">{plans.map(plan => <article className="pricing-card" key={plan.name} aria-label={`${plan.name} plan`}>
-      <div className="pricing-card-top"><h3>{plan.name}</h3><p>{plan.description}</p><div className="plan-price"><span>₦{plan.price}</span><small>/month</small></div><div className="plan-action"><a className="button charcoal" href="#demo" aria-label={`Explore the sample study pack from the ${plan.name} plan`}>Explore sample</a>{plan.name === 'Free' && <span>No payment needed</span>}</div></div>
-      <div className="pricing-card-details"><h4>What’s included</h4><ul>{plan.features.map(feature => <li key={feature}><Check size={14} aria-hidden="true" /><span>{feature}</span></li>)}</ul>
-      {plan.note && <p className="plan-note">{plan.note}</p>}
-      {plan.planned.length > 0 && <div className="plan-planned"><h4>Planned additions</h4><ul>{plan.planned.map(feature => <li key={feature}><span className="planned-mark" aria-hidden="true" /><span>{feature}</span></li>)}</ul></div>}
+    <div className="pricing-heading"><h2 id="pricing-title">A plan for your study rhythm</h2><p>Everything you need to build a consistent study routine.</p></div>
+    <p className="pricing-availability">Free study tools are available. Student and Pro are launch plans; paid subscriptions are not open yet.</p>
+    <div className="pricing-grid">{plans.map(plan => <article className={`pricing-card ${plan.name === 'Pro' ? 'pricing-pro' : ''}`} key={plan.name} aria-label={`${plan.name} plan`}>
+      <div className="pricing-card-top">{plan.name === 'Pro' && <span className="plan-note">Best for exam preparation</span>}<h3>{plan.name}</h3><p><strong>{plan.headline}</strong><br />{plan.description}</p><div className="plan-price"><span>₦{policy[plan.name].monthly_price.toLocaleString('en-NG')}</span><small>/month</small></div><div className="plan-action">{plan.name === 'Free' ? <a className="button charcoal" href="/dashboard/">{plan.cta}</a> : <><button className="button charcoal" disabled>{plan.cta}</button><span>Subscriptions coming soon</span></>}</div></div>
+      <div className="pricing-card-details"><h4>{plan.name === 'Free' ? 'Available now' : 'Launch allowance — not yet available'}</h4><ul><li><Check size={14} aria-hidden="true" /><span>{policy[plan.name].packs_per_month} learning packs per month</span></li><li><Check size={14} aria-hidden="true" /><span>Up to {policy[plan.name].practice_questions} questions per practice set</span></li>{plan.features.map(feature => <li key={feature}><Check size={14} aria-hidden="true" /><span>{feature}</span></li>)}</ul>
+      {plan.name !== 'Free' && <p className="plan-note">Custom practice becomes available when paid subscriptions launch.</p>}
+      {plan.planned.length > 0 && <div className="plan-planned"><h4>Coming soon — planned</h4><ul>{plan.planned.map(feature => <li key={feature}><span className="planned-mark" aria-hidden="true" /><span>{feature}</span></li>)}</ul></div>}
       </div>
     </article>)}</div>
-    <p className="pricing-footnote">Planned additions will be available when released. Each plan’s pack and question limits are monthly.</p>
+    <p className="pricing-footnote">Learning-pack allowances reset monthly. Question limits apply per generated set. Saved retries do not call AI or use another pack. New custom mixes remain subject to generation safety limits. Planned features are unavailable until released.</p>
   </section>;
 }

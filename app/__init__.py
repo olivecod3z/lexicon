@@ -1,2 +1,2 @@
-"""Lexicon backend package."""
+"""Lexycon backend package."""
 
