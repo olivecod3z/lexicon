@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { api } from './api'
 import Icon from './components/Icon'
 import AuthGate, { SignOutButton } from './components/AuthGate'
@@ -17,7 +17,7 @@ import './components/Practice.css'
 const navigation = [['overview', 'home', 'Dashboard'], ['recall', 'layers', "Today's recall"], ['materials', 'book', 'My materials'], ['study', 'layers', 'Study workspace'], ['progress', 'progress', 'My progress']]
 const tabs = [['notes', 'file', 'Study notes'], ['cards', 'layers', 'Flashcards'], ['practice', 'practice', 'Practice & quiz']]
 
-function StudyDashboard() {
+function StudyDashboard({ onLoadingChange }) {
   const [profile, setProfile] = useState(null)
   const [setupOpen, setSetupOpen] = useState(false)
   const [startupAttempt, setStartupAttempt] = useState(0)
@@ -47,6 +47,9 @@ function StudyDashboard() {
   const gapAnswers = current.gapAnswers || {}
   const theoryAnswers = current.theoryAnswers || {}
   const result = current.result
+
+  useLayoutEffect(() => { onLoadingChange(loadingLibrary) }, [loadingLibrary, onLoadingChange])
+  useLayoutEffect(() => () => onLoadingChange(true), [onLoadingChange])
 
   useEffect(() => {
     let active = true
@@ -193,9 +196,14 @@ function StudyDashboard() {
       </main></div></div>
   }
 
-  return <StudyLoading active={loadingLibrary}>{!loadingLibrary && renderReadyContent()}</StudyLoading>
+  return loadingLibrary ? null : renderReadyContent()
 }
 
 export default function App() {
-  return <AuthGate><StudyDashboard /></AuthGate>
+  const [authStatus, setAuthStatus] = useState('pending')
+  const [libraryLoading, setLibraryLoading] = useState(true)
+  const loading = authStatus === 'pending' || (authStatus === 'signed-in' && libraryLoading)
+  return <StudyLoading active={loading}>
+    <AuthGate onStatusChange={setAuthStatus}><StudyDashboard onLoadingChange={setLibraryLoading} /></AuthGate>
+  </StudyLoading>
 }

@@ -12,6 +12,7 @@
   text-align: center;
 }
 .study-loading.is-leaving { pointer-events: none; }
+.study-loading__destination[hidden] { display: none !important; }
 
 .study-loading__content {
   display: flex;
@@ -56,8 +57,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .study-loading__content { animation: study-loading-appear 360ms ease-out both; }
-  .study-loading__video { transition: opacity 240ms ease-out; }
+  .study-loading__content { animation: study-loading-appear 180ms ease-out both; }
+  .study-loading__video { transition: opacity 100ms linear; }
   .study-loading.is-leaving { animation: study-loading-leave 360ms cubic-bezier(.22, .68, .25, 1) forwards; }
   .study-loading.is-leaving .study-loading__emblem { animation: study-loading-open 360ms cubic-bezier(.22, .68, .25, 1) forwards; }
 }
