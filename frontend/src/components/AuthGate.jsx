@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { GoogleAuthProvider, createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signInWithPopup, signOut } from 'firebase/auth'
 import { auth } from '../firebase'
 import Icon from './Icon'
+import StudyLoading from './StudyLoading'
 import './AuthGate.css'
 
 const friendlyError = error => ({
@@ -42,8 +43,8 @@ export default function AuthGate({ children }) {
     return onAuthStateChanged(auth, setUser)
   }, [isLegacyDashboard])
 
-  if (isLegacyDashboard) return <main className="auth-page"><p role="status">Opening your Lexycon dashboard…</p></main>
-  if (user === undefined) return <main className="auth-page"><p role="status">Opening your study space…</p></main>
+  if (isLegacyDashboard) return <StudyLoading message="Opening your Lexycon dashboard…" />
+  if (user === undefined) return <StudyLoading />
   if (user) return <>{children}</>
 
   async function run(action) {
